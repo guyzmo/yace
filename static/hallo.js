@@ -1,0 +1,1 @@
+../node_modules/hallo/examples/hallo.js

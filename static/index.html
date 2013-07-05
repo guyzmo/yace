@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Yet another collaborative editor</title>
+        <script src="bcsocket.js"></script>                <!-- add transport -->
+        <script src="markdown/showdown.js"></script>       <!-- Showdown -->
+        <script src="ace/ace.js"></script>                 <!-- ACE Editor -->
+        <script src="webclient/share.js"></script>         <!-- ShareJS -->
+        <script src="webclient/ace.js"></script>           <!-- helper to attach textarea to ShareJS server -->
+        <script src="jquery-2.0.0.js"></script>            <!-- load JQuery -->
+        <script src="bootstrap/js/bootstrap.js"></script>  <!-- bootstrap UI -->
+        <script src="terminal/jquery.mousewheel.js"></script>  <!-- -->
+        <script src="terminal/jquery.terminal-0.6.3.js"></script>  <!--  -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+        <link href="terminal/jquery.terminal.css" rel="stylesheet" media="screen">
+        <script src="jsrepl/jsrepl.js" id="jsrepl-script"></script>
+        <!-- Hallo -->
+        <script src="rangy-core.js"></script>              <!-- load Rangy Core -->
+        <script src="jquery-ui.min.js"></script>           <!-- load JQuery UI -->
+        <script src="to-markdown.js"></script>             <!-- html to markdown converter -->
+        <script src="hallo.js"></script>                   <!-- html live editor -->
+        <link href="/font-awesome/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
+        <link href="/font-awesome/css/font-awesome.css" rel="stylesheet">
+        <style>
+            body {
+                overflow: hidden;
+            }
+            #preview {
+                top: 40px;
+                bottom: 0;
+                left: 50%;
+                right: 0;
+                margin: 0;
+                position: fixed;
+                float: left;
+                width: 50%;
+            }    
+            #editor {
+                bottom: 0;
+                left: 0;
+                margin: 0;
+                position: fixed;
+                right: 0;
+                top: 40px;
+                width: 50%;
+            }
+            #overlay {
+                z-index: 10000;
+                position: fixed;
+                top: 20%;
+                left: 30%;
+                padding: 10px;
+                border-radius: 10px;;
+                background: rgba(255,255,255,0.5);
+            }
+            .transparent {
+                opacity: 0.5;
+                width: 300px;
+            }
+        </style>
+        <script>
+            // notifications
+            bs_progress = function(title, message, loaded) {
+                var ret = '<div class="alert alert-info fade in transparent">';
+                ret +=    '    <h4 class="alert-heading">'+title+'</h4>';
+                ret +=    '    <p>'+message+'</p>';
+                ret +=    '    </p>';
+                ret +=    '</div>';
+                $('#alert').html(ret);
+                $('#overlay').fadeIn();
+                $('#pbar').html('<div class="progress progress-striped active">'
+                                + '    <div class="bar" style="width: '+((loaded*5)%100)+'%;"></div>'
+                                + '</div>')
+                return {
+                    update: function(val) {
+                        $('#overlay #pbar .bar').css('width', (val%100)+"%");
+                    },
+                    done: function() {
+                        $('#overlay #pbar .bar').css('width', "100%");
+                    },
+                    hide: function() {
+                        $('#overlay').fadeOut();
+                    }
+                }
+            }
+            bs_info = function(title, message, cb, ok, cancel) {
+                var ret = '<div class="alert alert-info fade in transparent">';
+                ret +=    '    <button data-dismiss="alert" class="close" type="button">×</button>';
+                ret +=    '    <h4 class="alert-heading">'+title+'</h4>';
+                ret +=    '    <p>'+message+'</p>';
+                if (cb) {
+                    if (!ok) ok = "Ok"
+                    if (!cancel) cancel = "Cancel"
+                    ret +=    '    <a id="alert_ok" href="#" data-dismiss="alert" class="btn btn-danger">'+ok+'</a> <a id="alert_abt" href="#" class="btn">'+cancel+'</a>';
+                    $('#alert_ok').on('click', cb, true);
+                    $('#alert_abt').on('click', cb, false);
+                }
+                ret +=    '    </p>';
+                ret +=    '</div>';
+                $('#alert').html(ret);
+                $('#overlay').fadeIn();
+            }
+            bs_alert = function(title, message, cb, ok, cancel) {
+                var ret = '<div class="alert alert-error fade in">';
+                ret +=    '    <button data-dismiss="alert" class="close" type="button">×</button>';
+                ret +=    '    <h4 class="alert-heading">'+title+'</h4>';
+                ret +=    '    <p>'+message+'</p>';
+                if (cb) {
+                    if (!ok) ok = "Ok"
+                    if (!cancel) cancel = "Cancel"
+                    ret +=    '    <a id="alert_ok" href="#" data-dismiss="alert" class="btn btn-danger">'+ok+'</a> <a id="alert_abt" data-dismiss="alert" href="#" class="btn">'+cancel+'</a>';
+                    $('#alert_ok').on('click', cb, true);
+                    $('#alert_abt').on('click', cb, false);
+                }
+                ret +=    '    </p>';
+                ret +=    '</div>';
+                $('#alert').html(ret);
+                $('#overlay').fadeIn();
+            }
+
+            // setup languages
+            var languages = {
+                javascript:   { greetings: "[[gb;#0f0;#000]REPL/Javascript interpreter:]", 
+                                "prompt": "js> " },
+                python:       { greetings: "[[gb;#0f0;#000]REPL/Python interpreter:]",
+                                "prompt": ">>> "},
+                ruby:         { greetings: "[[gb;#0f0;#000]REPL/Ruby interpreter:]", 
+                                "prompt": "irb(main)>" },
+                lua:          { greetings: "[[gb;#0f0;#000]REPL/Lua interpreter:]", 
+                                "prompt": "lua> " },
+                scheme:       { greetings: "[[gb;#0f0;#000]REPL/Scheme interpreter:]", 
+                                "prompt": "scheme> " },
+                qbasic:       { greetings: "[[gb;#0f0;#000]REPL/QBasic interpreter:]", 
+                                "prompt": "QB> " },
+                forth:        { greetings: "[[gb;#0f0;#000]REPL/Forth interpreter:]", 
+                                "prompt": "forth> " },
+                emoticon:     { greetings: "[[gb;#0f0;#000]REPL/Emoticon interpreter:]", 
+                                "prompt": ":-> " },
+                brainfuck:    { greetings: "[[gb;#0f0;#000]REPL/Brainfuck interpreter:]", 
+                                "prompt": "bf> " },
+                lolcode:      { greetings: "[[gb;#0f0;#000]REPL/Lolcode interpreter:]", 
+                                "prompt": "lolcode> " },
+                unlambda:     { greetings: "[[gb;#0f0;#000]REPL/Unlambda interpreter:]", 
+                                "prompt": "unlambda> " },
+                bloop:        { greetings: "[[gb;#0f0;#000]REPL/Bloop interpreter:]", 
+                                "prompt": "bloop> " },
+                traceur:      { greetings: "[[gb;#0f0;#000]REPL/Javascript.next interpreter:]", 
+                                "prompt": "es6> " },
+                coffeescript: { greetings: "[[gb;#0f0;#000]REPL/Coffeescript interpreter:]", 
+                                "prompt": "coffee> " },
+                move:         { greetings: "[[gb;#0f0;#000]REPL/Move interpreter:]", 
+                                "prompt": "move> " },
+                kaffeine:     { greetings: "[[gb;#0f0;#000]REPL/Kaffeine interpreter:]", 
+                                "prompt": "kaffeine> " },
+                roy:          { greetings: "[[gb;#0f0;#000]REPL/Roy interpreter:]", 
+                                "prompt": "roy> " },
+
+            }
+
+            // load interpreter
+            function load_interpreter(lang) {
+                    if (!lang.input_cb) lang.input_cb = function(command, term) {
+                                                  if (command !== '') {
+                                                      try {
+                                                          this.jsrepl.eval(command);
+                                                      } catch(e) {
+                                                          term.error(new String(e));
+                                                      }
+                                                  } else {
+                                                      term.echo('');
+                                                  }
+                                              }
+                    if (!lang.result_cb)
+                        lang.result_cb = function(r) {
+                            if (r !== "")
+                                this.term.echo('[[i;;]'+r.replace("]","\\]").trim("\n")+']')
+                        };
+                    if (!lang.output_cb)
+                        lang.output_cb = function(r) {
+                            if (r !== "") {
+                                this.term.echo('[[;#0f0;#000]'+r.replace("]","\\]").trim("\n")+']')
+                            }
+                        };
+                    if (!lang.error_cb)
+                        lang.error_cb = function(r) {
+                            if (r !== "")
+                                this.term.error(r)
+                        }
+
+                    var loaded = 1
+                    var pbar = bs_progress('REPL interpreter', 'loading '+lang.language+' interpreter', loaded);
+                    window.jsrepl = new JSREPL({  
+                        progress: $.proxy(function () {pbar.update(++loaded*5)}),
+                        timeout: {
+                            time: 30000,  
+                            callback: function () {
+                                bs_alert('Interpreter timeout', 
+                                'Execution is taking too long to respond, respawn?',
+                                function(agreed) { // FIXME not working
+                                    if (agreed)
+                                        console.log("KILL!")
+                                    else
+                                        console.log("wait!")
+                                }, "Respawn", "Abort")
+                            }
+                        }
+                    });  
+                    try {
+                        window.jsrepl.loadLanguage(lang.language, function () {  
+                            $("#hide_preview").html("Hide CLI")
+                            pbar.done();
+                            setTimeout(function() {pbar.hide()}, 1000);
+                            term.fadeIn()
+                        });
+                        load_terminal(lang.input_cb, lang.prompt, lang.greetings);
+                        window.jsrepl.on('result', $.proxy(lang.result_cb, window))
+                        window.jsrepl.on('output', $.proxy(lang.output_cb, window))
+                        window.jsrepl.on('error', $.proxy(lang.error_cb, window))
+                    } catch (e) {
+                        bs_alert('REPL Failure', e);
+                        load_terminal();
+                    }
+                }
+            
+            // load terminal
+            function load_terminal(input_fun, prt, grts) {
+                if (prt === undefined) prt = "js>"
+                if (grts === undefined) grts = '[[gb;#0f0;#000]Javascript interpreter:]'
+                if (input_fun === undefined) {
+                    function input_fun(command, term) {
+                        if (command !== '') {
+                            try {
+                                var result = window.eval(command);
+                                if (result !== undefined)
+                                    term.echo(new String(result));
+                            } catch(e) {
+                                    term.error(new String(e));
+                            }
+                        } else {
+                            term.echo('');
+                        }
+                    }
+                }
+                window.term = $('#preview').terminal(
+                            $.proxy(input_fun, window), {
+                            greetings: grts,
+                            name: 'interpret',
+                            prompt: prt
+                });
+                term.hide()
+            }
+
+            // load at startup
+            window.onload = function() {
+                try {
+                    $('#overlay').hide();
+
+                    // build the parameters
+                    var defaults = {text: 'test', format:'markdown', theme:'twilight'}
+                    var params = (function(params) {
+                        params = params.replace('?','').split('&').map(function (elt,idx,lst) { return elt.split('=')} );
+                        var ret = defaults;
+                        params.forEach(function(param) {
+                            ret[param[0]] = param[1];
+                        });
+                        return ret;
+                    }(window.location.search));
+
+                    // load filetype menu
+                    $('#dd-filetype').append('<li role="presentation">'
+                                            + '<a id="markdown" href="#" tabindex="-1" role="menuitem">'
+                                            + 'Markdown'
+                                            + '</a> </li>')
+                    $('#dd-filetype').append('<li class="divider" role="presentation"></li>')
+                    for (var lang in Object.keys(languages)) {
+                        lang = Object.keys(languages)[lang];
+                        $('#dd-filetype').append('<li role="presentation">'
+                                                + '<a id="'+lang+'" href="#" tabindex="-1" role="menuitem">'
+                                                + lang 
+                                                + '</a> </li>')
+                    }
+
+                    // set up the dropdown menu actions
+                    $('ul#dd-filetype li a').click(function (e) {
+                        params['format'] = $(this).attr('id')
+                        var search = Object.keys(params).map(function(k) { return k+"="+params[k] }, params ).join("&")
+                        window.location.replace(window.location.origin + "/?" + search)
+                        e.preventDefault();
+                        return false;
+                    });
+                    $('ul#dd-theme li a').click(function (e) {
+                        params['theme'] = $(this).attr('id')
+                        var search = Object.keys(params).map(function(k) { return k+"="+params[k] }, params ).join("&")
+                        window.location.replace(window.location.origin + "/?" + search)
+                        e.preventDefault();
+                        return false;
+                    });
+                    this.hidden = false;
+                    $('#hide_preview').click(function (e) {
+                        if (this.hidden) {
+                            this.hidden = false;
+                            $("#hide_preview").html($("#hide_preview").html().replace("Hide", "Show"));
+                            $('#preview').show();
+                            $('#editor').css('width', '50%');
+                            $('#editor').resize()
+                            e.preventDefault();
+                        } else {
+                            $("#hide_preview").html($("#hide_preview").html().replace("Show", "Hide"));
+                            this.hidden = true;
+                            $('#preview').hide();
+                            $('#editor').css('width', '100%');
+                            $('#editor').resize()
+                            e.preventDefault();
+                        }
+                        return false;
+                    });
+
+                    // get the textarea element 
+                    var editor = ace.edit("editor");
+                    editor.setTheme("ace/theme/"+params.theme);
+                    editor.getSession().setMode("ace/mode/"+params.format);
+                    editor.setReadOnly(true);
+                    editor.setShowPrintMargin(false);
+
+                    // connect to the server
+                    var connection = sharejs.open(params.text, 'text', function(error, doc) {
+                        // this function is called once the connection is opened
+                        if (error) {
+                            console.error(error);
+                        } else {
+                            // attach the ShareJS document to the textarea
+                            doc.attach_ace(editor);
+                            editor.setReadOnly(false);
+                            window.doc = doc;
+                            if (languages.hasOwnProperty(params.format)) {
+                                languages[params.format].language = params.format;
+                                try {
+                                    load_interpreter(languages[params.format])
+                                } catch(e) {
+                                    console.error(e)
+                                }
+                                $('#filetype').val(params.format);
+                                $('#run_script').on('click', function() {
+                                    window.term.echo("[[gb;#0f0;#000]Executing script:]");
+                                    window.term.exec(window.doc.snapshot);
+                                    $('#preview').focus();
+                                });
+                            } else if (params.format === "markdown") {
+                                $('#run_script').hide()
+                                // showdown setting
+                                var converter = new Showdown.converter();
+                                // hallo setting
+                                $('#preview').hallo({
+                                    plugins: {
+                                        'halloformat': {},
+                                        'halloblock': {},
+                                        'hallojustify': {},
+                                        'hallolists': {},
+                                        //'hallolink': {},
+                                        'halloreundo': {}
+                                    },
+                                    editable: false,
+                                });
+                                var markdownize = function(content) {
+                                    var html = content.split("\n").map($.trim).filter(function(line) {
+                                        return line != "";
+                                    }).join("\n");
+                                    return toMarkdown(html);
+                                };
+                                var htmlize = function(content) {
+                                    return converter.makeHtml(content);
+                                };
+                                var showSource = function(content) {
+                                    var markdown = markdownize(content);
+                                    if (doc.getText() == markdown) {
+                                        return;
+                                    }
+                                    doc.setText(markdown);
+                                }; 
+                                var updateHtml = function(content) {
+                                    if (markdownize(jQuery('#preview').html()) == content) {
+                                        return;
+                                    }
+                                    var html = htmlize(content);
+                                    jQuery('#preview').html(html);
+                                };
+                                $('#preview').bind('hallomodified', function(event, data) {
+                                    showSource(data.content);
+                                    event.preventDefault();
+                                });
+                                $('#editor').on('change', function(event, data) {
+                                    updateHtml($('#editor').getSession().getDocument().getValue());
+                                })
+                                // /hallo update
+                                // update function
+                                var update = function() {
+                                    try{
+                                        $("#preview").html(converter.makeHtml(doc.snapshot));
+                                    } catch (e) {
+                                        console.error(e);
+                                    }
+                                }
+                                update();
+                                doc.on('change', update);
+                            } else {
+                                bs_alert("unknown filetype "+params.format);
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <header class="navbar navbar-inverse navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="brand" href="#">Yet another collaborative editor</a>
+                    <ul class="nav" role="navigation">
+                        <li class="dropdown">
+                        <a id="drop1" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#"> Filetype <b class="caret"></b></a>
+                        <ul id="dd-filetype" class="dropdown-menu" aria-labelledby="drop1" role="menu">
+                        </ul>
+                        </li>
+                        <li class="dropdown">
+                        <a id="drop2" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#">Theme <b class="caret"></b></a>
+                        <ul id="dd-theme" class="dropdown-menu" aria-labelledby="drop2" role="menu">
+                            <li role="presentation"> <a id="twilight" href="#" tabindex="-1" role="menuitem">Twilight</a> </li>
+                            <li role="presentation"> <a id="textmate" href="#" tabindex="-1" role="menuitem">Textmate</a> </li>
+                        </ul>
+                        </li>
+                        <li class="dropdown">
+                        <a id="drop2" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#">More<b class="caret"></b></a>
+                        <ul id="dd-more" class="dropdown-menu" aria-labelledby="drop2" role="menu">
+                            <li role="presentation"> <a id="help" href="#" tabindex="-1" role="menuitem">Help</a> </li>
+                            <li role="presentation"> <a id="syntax" href="#" tabindex="-1" role="menuitem">Syntax</a> </li>
+                            <li role="presentation"> <a id="about" href="#" tabindex="-1" role="menuitem">About</a> </li>
+                        </ul>
+                        </li>
+                    </ul>
+                    <div class="navbar-form pull-right">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-inverse" id="hide_preview">Hide preview</button>
+                            <button type="button" class="btn btn-success" id="run_script">Run script</button>
+                            <button class="btn btn-inverse dropdown-toggle" data-toggle="dropdown" href="#">
+                            Export<span class="caret"></span>
+                            </button>
+                            <ul id="dd-export" class="dropdown-menu">
+                                <li role="presentation"> <a id="gist" href="#" tabindex="-1" role="menuitem">Export to Gist</a> </li>
+                                <li role="presentation"> <a id="wiki" href="#" tabindex="-1" role="menuitem">Export to wiki</a> </li>
+                                <li class="divider" role="presentation"></li>
+                                <li role="presentation"> <a id="download" href="#" tabindex="-1" role="menuitem">Download as raw</a> </li>
+                                <li role="presentation"> <a id="pdf" href="#" tabindex="-1" role="menuitem">Download as pdf</a> </li>
+                                <li role="presentation"> <a id="odt" href="#" tabindex="-1" role="menuitem">Download as odt</a> </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <section id="overlay">
+            <div id="alert"></div>
+            <div id="pbar"></div>
+        </section>
+        <section id='editor'></section>
+        <section id='preview'></section>
+        <!-- NEW -->
+        <!-- /NEW -->
+    </body>
+</html>
