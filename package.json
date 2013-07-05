@@ -1,0 +1,29 @@
+{
+  "name": "yace",
+  "description": "Yet Another Collaborative Editor",
+  "author": {
+    "name": "Bernard Pratz",
+    "email": "guyzmo@m0g.net"
+  },
+  "homepage": "http://m0g.net",
+  "version": "0.1",
+  "dependencies": {},
+  "devDependencies": {
+    "uglify-js": ">=1.2.6",
+    "phantomjs": "0.2.x"
+  },
+  "docco_husky": {
+    "output_dir": "docs",
+    "project_name": "Yace"
+  },
+  "scripts": {
+  },
+  "readme": "",
+  "readmeFilename": "README.md",
+  "_id": "YACE@0.1",
+  "dist": {
+    "shasum": ""
+  },
+  "_from": "yace@",
+  "_resolved": ""
+}
