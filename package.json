@@ -6,7 +6,7 @@
     "email": "guyzmo@m0g.net"
   },
   "homepage": "http://m0g.net",
-  "version": "0.1",
+  "version": "0.0.1",
   "dependencies": {},
   "devDependencies": {
     "uglify-js": ">=1.2.6",
@@ -14,13 +14,13 @@
   },
   "docco_husky": {
     "output_dir": "docs",
-    "project_name": "Yace"
+    "project_name": "yace"
   },
   "scripts": {
   },
   "readme": "",
   "readmeFilename": "README.md",
-  "_id": "YACE@0.1",
+  "_id": "YACE@0.0.1",
   "dist": {
     "shasum": ""
   },

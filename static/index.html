@@ -16,10 +16,12 @@
         <link href="terminal/jquery.terminal.css" rel="stylesheet" media="screen">
         <script src="jsrepl/jsrepl.js" id="jsrepl-script"></script>
         <!-- Hallo -->
+        <script src="googlediff.js"></script>              <!-- Google diff -->
         <script src="rangy-core.js"></script>              <!-- load Rangy Core -->
         <script src="jquery-ui.min.js"></script>           <!-- load JQuery UI -->
         <script src="to-markdown.js"></script>             <!-- html to markdown converter -->
         <script src="hallo.js"></script>                   <!-- html live editor -->
+        <link href="hallo.css" rel="stylesheet">
         <link href="/font-awesome/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
         <link href="/font-awesome/css/font-awesome.css" rel="stylesheet">
         <style>
@@ -317,7 +319,7 @@
                     });
 
                     // get the textarea element 
-                    var editor = ace.edit("editor");
+                    window.editor = ace.edit("editor");
                     editor.setTheme("ace/theme/"+params.theme);
                     editor.getSession().setMode("ace/mode/"+params.format);
                     editor.setReadOnly(true);
@@ -360,7 +362,7 @@
                                         //'hallolink': {},
                                         'halloreundo': {}
                                     },
-                                    editable: false,
+                                    editable: true,
                                 });
                                 var markdownize = function(content) {
                                     var html = content.split("\n").map($.trim).filter(function(line) {
@@ -376,7 +378,7 @@
                                     if (doc.getText() == markdown) {
                                         return;
                                     }
-                                    doc.setText(markdown);
+                                    editor.getSession().getDocument().setValue(markdown);
                                 }; 
                                 var updateHtml = function(content) {
                                     if (markdownize(jQuery('#preview').html()) == content) {
@@ -385,24 +387,50 @@
                                     var html = htmlize(content);
                                     jQuery('#preview').html(html);
                                 };
-                                $('#preview').bind('hallomodified', function(event, data) {
-                                    showSource(data.content);
-                                    event.preventDefault();
-                                });
+                                var skip_update = false;
+                                var hallomodified = function(event, data) {
+                                    var dmp = new diff_match_patch();
+                                    var edoc = editor.getSession().getDocument();
+                                    var diffs = dmp.diff_main(doc.snapshot, markdownize(data.content));
+                                    var pos = 0;
+                                    for (var i in diffs) {
+                                        var op = diffs[i][0];
+                                        var st = diffs[i][1];
+                                        if (op === 0) {
+                                            pos += st.length;
+                                        } else if (op === 1) {
+                                            pos += st.length;
+                                            skip_update = true;
+                                            if (st === "\n\n") {
+                                                edoc.insert(edoc.indexToPosition(pos-2), st);
+                                            } else
+                                                edoc.insert(edoc.indexToPosition(pos-1), st);
+                                            skip_update = false;
+                                        } else if (op === -1) {
+                                            var start = edoc.indexToPosition(pos);
+                                            var end = edoc.indexToPosition(pos+st.length);
+                                            var range = ace.require('ace/range').Range.fromPoints(start, end)
+                                            skip_update = true;
+                                            edoc.remove(range);
+                                            skip_update = false;
+                                        }
+
+                                    }
+                                    event.preventDefault()
+                                };
+                                $('#preview').bind('hallomodified', hallomodified);
                                 $('#editor').on('change', function(event, data) {
-                                    updateHtml($('#editor').getSession().getDocument().getValue());
-                                })
+                                    updateHtml(doc.snapshot);
+                                    event.preventDefault()
+                                });
+                                doc.on('change', function(event, data) {
+                                    if (!skip_update) {
+                                        updateHtml(doc.snapshot);
+                                    }
+                                });
+                                updateHtml(doc.snapshot);
                                 // /hallo update
                                 // update function
-                                var update = function() {
-                                    try{
-                                        $("#preview").html(converter.makeHtml(doc.snapshot));
-                                    } catch (e) {
-                                        console.error(e);
-                                    }
-                                }
-                                update();
-                                doc.on('change', update);
                             } else {
                                 bs_alert("unknown filetype "+params.format);
                             }
