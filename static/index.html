@@ -91,16 +91,19 @@
                 ret +=    '    <button data-dismiss="alert" class="close" type="button">×</button>';
                 ret +=    '    <h4 class="alert-heading">'+title+'</h4>';
                 ret +=    '    <p>'+message+'</p>';
-                if (cb) {
+                if (cb !== undefined) {
                     if (!ok) ok = "Ok"
                     if (!cancel) cancel = "Cancel"
-                    ret +=    '    <a id="alert_ok" href="#" data-dismiss="alert" class="btn btn-danger">'+ok+'</a> <a id="alert_abt" href="#" class="btn">'+cancel+'</a>';
-                    $('#alert_ok').on('click', cb, true);
-                    $('#alert_abt').on('click', cb, false);
+                    ret +=    '    <button id="alert_ok" href="#" data-dismiss="alert" class="btn btn-info">'+ok+'</button>'
+                    ret +=    '    <button id="alert_abt" href="#" data-dismiss="alert" class="btn">'+cancel+'</button>';
                 }
                 ret +=    '    </p>';
                 ret +=    '</div>';
                 $('#alert').html(ret);
+                if (cb !== undefined) {
+                    $('#alert_ok').on('click', function() {$("#overlay").hide(); cb(true);});
+                    $('#alert_abt').on('click', function() {$("#overlay").hide(); cb(false);});
+                }
                 $('#overlay').fadeIn();
             }
             bs_alert = function(title, message, cb, ok, cancel) {
@@ -108,16 +111,19 @@
                 ret +=    '    <button data-dismiss="alert" class="close" type="button">×</button>';
                 ret +=    '    <h4 class="alert-heading">'+title+'</h4>';
                 ret +=    '    <p>'+message+'</p>';
-                if (cb) {
+                if (cb !== undefined) {
                     if (!ok) ok = "Ok"
                     if (!cancel) cancel = "Cancel"
-                    ret +=    '    <a id="alert_ok" href="#" data-dismiss="alert" class="btn btn-danger">'+ok+'</a> <a id="alert_abt" data-dismiss="alert" href="#" class="btn">'+cancel+'</a>';
-                    $('#alert_ok').on('click', cb, true);
-                    $('#alert_abt').on('click', cb, false);
+                    ret +=    '    <a id="alert_ok" href="#" data-dismiss="overlay" class="btn btn-danger">'+ok+'</a>'
+                    ret +=    '    <a id="alert_abt" data-dismiss="overlay" href="#" class="btn">'+cancel+'</a>';
                 }
                 ret +=    '    </p>';
                 ret +=    '</div>';
                 $('#alert').html(ret);
+                if (cb !== undefined) {
+                    $('#alert_ok').on('click', function() {$("#overlay").hide(); cb(true);});
+                    $('#alert_abt').on('click', function() {$("#overlay").hide(); cb(false);});
+                }
                 $('#overlay').fadeIn();
             }
 
