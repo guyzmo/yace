@@ -304,111 +304,244 @@
                     $("#overlay").remove();
                 });
             }
+
+            ////////////////////////////////////////////////////////////////////////
+
+            function check_block_pair(input) {
+                if (!this.opened_parens) {
+                    this.opened_parens = {}
+                    this.opened_parens['{'] = input.split('{').length-1;
+                    this.opened_parens['}'] = input.split('}').length-1;
+                    this.opened_parens['['] = input.split('[').length-1;
+                    this.opened_parens[']'] = input.split(']').length-1;
+                    this.opened_parens['('] = input.split('(').length-1;
+                    this.opened_parens[')'] = input.split(')').length-1;
+                } else {
+                    this.opened_parens['{'] += input.split('{').length-1;
+                    this.opened_parens['}'] += input.split('}').length-1;
+                    this.opened_parens['['] += input.split('[').length-1;
+                    this.opened_parens[']'] += input.split(']').length-1;
+                    this.opened_parens['('] += input.split('(').length-1;
+                    this.opened_parens[')'] += input.split(')').length-1;
+                }
+                if (this.opened_parens['{'] === this.opened_parens['}']
+                        && this.opened_parens['['] === this.opened_parens[']']
+                        && this.opened_parens['('] === this.opened_parens[')']) {
+                    this.opened_parens = undefined;
+                    return true;
+                }
+                return false;
             }
 
             // setup languages
             var languages = {
                 javascript:   { greetings: "[[gb;#0f0;#000]REPL/Javascript interpreter:]", 
-                                "prompt": "js> " },
-                python:       { greetings: "[[gb;#0f0;#000]REPL/Python interpreter:]",
-                                "prompt": ">>> "},
+                                prompt: "js> ",
+                                input_cb: function(input, term) {
+                                    if (input !== '') {
+                                        if (!check_block_pair(input)) {
+                                            if (!this.script) {
+                                                term.set_prompt("... ");
+                                                this.script = [input];
+                                            } else
+                                                this.script.push(input);
+                                        } else {
+                                            try {
+                                                if (this.script) {
+                                                    this.script.push(input);
+                                                    this.jsrepl.eval(this.script.join("\n"));
+                                                    this.script = undefined;
+                                                    term.set_prompt("js> ")
+                                                } else
+                                                    this.jsrepl.eval(input);
+                                            } catch(e) {
+                                                term.error(new String(e));
+                                            }
+                                        }
+                                    } else {
+                                        term.echo('');
+                                    }
+                                }
+                },
+                python:       { greetings: "[[gb;#0f0;#000]REPL/Python 2.7.2 (default, Sep 14 2011, 04:10:57) \n[GCC 4.2.1 (Based on Apple Inc. build 5658) (LLVM build)\\]",
+                                prompt: ">>> ",
+                                input_cb: function(input, term) {
+                                    try {
+                                        if (input !== '') {
+                                            if (input.endsWith(":")) {
+                                                if (!this.script) {
+                                                    this.nb_el = 0;
+                                                    this.script = [input];
+                                                    term.set_prompt("... ");
+                                                } else {
+                                                    this.script.push(input);
+                                                }
+                                            } else if (this.script) {
+                                                this.script.push(input);
+                                            } else {
+                                                try {
+                                                    this.jsrepl.eval(input);
+                                                    this.script = undefined;
+                                                } catch(e) {
+                                                    term.error(new String(e));
+                                                }
+                                            }
+                                        } else { 
+                                            term.echo('');
+                                            this.nb_el = (this.nb_el + 1) % 2;
+                                            if (this.nb_el === 1 && this.script) {
+                                                term.set_prompt(">>> ");
+                                                try {
+                                                    this.jsrepl.eval(this.script.join("\n"));
+                                                    this.script = undefined;
+                                                    this.nb_el = undefined;
+                                                } catch(e) {
+                                                    term.error(new String(e));
+                                                }
+                                            }
+                                        }
+                                    } catch (e) {
+                                        console.error(e);
+                                        term.error(new String(e));
+                                    }
+                                }
+                },
                 ruby:         { greetings: "[[gb;#0f0;#000]REPL/Ruby interpreter:]", 
-                                "prompt": "irb(main)>" },
+                                prompt: "irb(main):0> ",
+                                input_cb: function(input, term) {
+                                    if (input !== '') {
+                                        if (!this.in_block) {
+                                            this.in_block = 0;
+                                            this.script = [];
+                                        }
+                                        for (var i in input.match(/\b(def|if|while|for)\b/g))
+                                            term.set_prompt("irb(main):"+(++this.in_block)+"> ");
+                                        for (var i in input.match(/\bend\b/g))
+                                            term.set_prompt("irb(main):"+(--this.in_block)+"> ")
+                                        
+                                        if (this.in_block > 0) {
+                                            this.script.push(input);
+                                        } else {
+                                            if (this.script) {
+                                                this.script.push(input);
+                                                input = this.script.join("\n");
+                                                this.script = undefined;
+                                                this.in_block = undefined;
+                                                term.set_prompt("irb(main):0> ")
+                                            }
+                                            try {
+                                                this.jsrepl.eval(input);
+                                            } catch(e) {
+                                                term.error(new String(e));
+                                            }
+                                        }
+                                    } else {
+                                        term.echo('');
+                                    }
+                                },
+                                result_cb: function(r) {
+                                    if (r !== "")
+                                        this.term.echo('[[gb;#0f0;#000]=>] '+r.trim("\n"))
+                                }
+                },
                 lua:          { greetings: "[[gb;#0f0;#000]REPL/Lua interpreter:]", 
-                                "prompt": "lua> " },
+                                prompt: "lua> " },
                 scheme:       { greetings: "[[gb;#0f0;#000]REPL/Scheme interpreter:]", 
-                                "prompt": "scheme> " },
+                                prompt: "scheme> " },
                 qbasic:       { greetings: "[[gb;#0f0;#000]REPL/QBasic interpreter:]", 
-                                "prompt": "QB> " },
+                                prompt: "QB> " },
                 forth:        { greetings: "[[gb;#0f0;#000]REPL/Forth interpreter:]", 
-                                "prompt": "forth> " },
+                                prompt: "forth> " },
                 emoticon:     { greetings: "[[gb;#0f0;#000]REPL/Emoticon interpreter:]", 
-                                "prompt": ":-> " },
+                                prompt: ":-> " },
                 brainfuck:    { greetings: "[[gb;#0f0;#000]REPL/Brainfuck interpreter:]", 
-                                "prompt": "bf> " },
+                                prompt: "bf> " },
                 lolcode:      { greetings: "[[gb;#0f0;#000]REPL/Lolcode interpreter:]", 
-                                "prompt": "lolcode> " },
+                                prompt: "lolcode> " },
                 unlambda:     { greetings: "[[gb;#0f0;#000]REPL/Unlambda interpreter:]", 
-                                "prompt": "unlambda> " },
+                                prompt: "unlambda> " },
                 bloop:        { greetings: "[[gb;#0f0;#000]REPL/Bloop interpreter:]", 
-                                "prompt": "bloop> " },
+                                prompt: "bloop> " },
                 traceur:      { greetings: "[[gb;#0f0;#000]REPL/Javascript.next interpreter:]", 
-                                "prompt": "es6> " },
+                                prompt: "es6> " },
                 coffeescript: { greetings: "[[gb;#0f0;#000]REPL/Coffeescript interpreter:]", 
-                                "prompt": "coffee> " },
+                                prompt: "coffee> " },
                 move:         { greetings: "[[gb;#0f0;#000]REPL/Move interpreter:]", 
-                                "prompt": "move> " },
+                                prompt: "move> " },
                 kaffeine:     { greetings: "[[gb;#0f0;#000]REPL/Kaffeine interpreter:]", 
-                                "prompt": "kaffeine> " },
+                                prompt: "kaffeine> " },
                 roy:          { greetings: "[[gb;#0f0;#000]REPL/Roy interpreter:]", 
-                                "prompt": "roy> " },
+                                prompt: "roy> " },
 
             }
 
             // load interpreter
             function load_interpreter(lang) {
-                    if (!lang.input_cb) lang.input_cb = function(command, term) {
-                                                  if (command !== '') {
-                                                      try {
-                                                          this.jsrepl.eval(command);
-                                                      } catch(e) {
-                                                          term.error(new String(e));
-                                                      }
-                                                  } else {
-                                                      term.echo('');
-                                                  }
-                                              }
-                    if (!lang.result_cb)
-                        lang.result_cb = function(r) {
-                            if (r !== "")
-                                this.term.echo('[[i;;]'+r.replace("]","\\]").trim("\n")+']')
-                        };
-                    if (!lang.output_cb)
-                        lang.output_cb = function(r) {
-                            if (r !== "") {
-                                this.term.echo('[[;#0f0;#000]'+r.replace("]","\\]").trim("\n")+']')
-                            }
-                        };
-                    if (!lang.error_cb)
-                        lang.error_cb = function(r) {
-                            if (r !== "")
-                                this.term.error(r)
+                if (!lang.input_cb) lang.input_cb = function(command, term) {
+                                                if (command !== '') {
+                                                    try {
+                                                        this.jsrepl.eval(command);
+                                                    } catch(e) {
+                                                        term.error(new String(e));
+                                                    }
+                                                } else {
+                                                    term.echo('');
+                                                }
+                                            }
+                if (!lang.result_cb)
+                    lang.result_cb = function(r) {
+                        if (r !== "")
+                            this.term.echo('[[i;;]'+r.replace("]","\\]").trim("\n")+']')
+                    };
+                if (!lang.output_cb)
+                    lang.output_cb = function(r) {
+                        if (r !== "") {
+                            this.term.echo('[[;#0f0;#000]'+r.replace("]","\\]").trim("\n")+']')
                         }
-
-                    var loaded = 1
-                    var pbar = bs_progress('REPL interpreter', 'loading '+lang.language+' interpreter', loaded);
-                    window.jsrepl = new JSREPL({
-                        progress: $.proxy(function () {pbar.update(++loaded*5)}),
-                        timeout: {
-                            time: 30000,  
-                            callback: function () {
-                                bs_alert('Interpreter timeout', 
-                                'Execution is taking too long to respond, respawn?',
-                                function(agreed) { // FIXME not working
-                                    if (agreed)
-                                        console.log("KILL!")
-                                    else
-                                        console.log("wait!")
-                                }, "Respawn", "Abort")
-                            }
-                        }
-                    });  
-                    try {
-                        window.jsrepl.loadLanguage(lang.language, function () {  
-                            $("#hide_preview").html("Hide CLI")
-                            pbar.done();
-                            setTimeout(function() {pbar.hide()}, 1000);
-                            term.fadeIn()
-                        });
-                        load_terminal(lang.input_cb, lang.prompt, lang.greetings);
-                        window.jsrepl.on('result', $.proxy(lang.result_cb, window))
-                        window.jsrepl.on('output', $.proxy(lang.output_cb, window))
-                        window.jsrepl.on('error', $.proxy(lang.error_cb, window))
-                    } catch (e) {
-                        bs_alert('REPL Failure', e);
-                        load_terminal();
+                    };
+                if (!lang.error_cb)
+                    lang.error_cb = function(r) {
+                        if (r !== "")
+                            this.term.error(r)
                     }
+
+                var loaded = 1
+                var pbar = bs_progress('REPL interpreter', 'loading '+lang.language+' interpreter', loaded);
+                window.jsrepl = new JSREPL({
+                    progress: $.proxy(function () {pbar.update(++loaded*5)}),
+                    timeout: {
+                        time: 30000,
+                        callback: function () {
+                            var ret = {done: false, value:undefined};
+                            bs_alert('Interpreter timeout', 
+                            'Execution is taking too long to respond, respawn?',
+                            function(agreed) {
+                                if (!agreed)
+                                    window.jsrepl.loadLanguage(lang.language, function () {  
+                                        pbar.done();
+                                        setTimeout(function() {pbar.hide()}, 1000);
+                                        term.fadeIn()
+                                    });
+                            }, "Wait", "Respawn")
+                            return true;
+                        }
+                    }
+                });  
+                try {
+                    window.jsrepl.loadLanguage(lang.language, function () {  
+                        pbar.done();
+                        setTimeout(function() {pbar.hide()}, 1000);
+                        term.fadeIn()
+                    });
+                    load_terminal(lang.input_cb, lang.prompt, lang.greetings);
+                    window.jsrepl.on('result', $.proxy(lang.result_cb, window))
+                    window.jsrepl.on('output', $.proxy(lang.output_cb, window))
+                    window.jsrepl.on('error', $.proxy(lang.error_cb, window))
+                } catch (e) {
+                    bs_alert('REPL Failure', e);
+                    load_terminal();
                 }
+            }
             
             // load terminal
             function load_terminal(input_fun, prt, grts) {
