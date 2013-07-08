@@ -478,6 +478,38 @@
                                 prompt: "roy> " },
 
             }
+            var themes = [
+                "ambiance",
+                "chaos",
+                "chrome",
+                "clouds",
+                "clouds_midnight",
+                "cobalt",
+                "crimson_editor",
+                "dawn",
+                "dreamweaver",
+                "eclipse",
+                "github",
+                "idle_fingers",
+                "kr",
+                "merbivore",
+                "merbivore_soft",
+                "mono_industrial",
+                "monokai",
+                "pastel_on_dark",
+                "solarized_dark",
+                "solarized_light",
+                "terminal",
+                "textmate",
+                "tomorrow",
+                "tomorrow_night_blue",
+                "tomorrow_night_bright",
+                "tomorrow_night_eighties",
+                "tomorrow_night",
+                "twilight",
+                "vibrant_ink",
+                "xcode"
+            ];
 
             // load interpreter
             function load_interpreter(lang) {
@@ -581,7 +613,7 @@
                     $('#overlay').hide();
 
                     // build the parameters
-                    var defaults = {text: 'test', format:'markdown', theme:'twilight'}
+                    var defaults = {text: 'test', format:'markdown'}
                     var params = (function(params) {
                         params = params.replace('?','').split('&').map(function (elt,idx,lst) { return elt.split('=')} );
                         var ret = defaults;
@@ -613,21 +645,27 @@
                         e.preventDefault();
                         return false;
                     });
+                    // load theme menu
+                    for (var theme in themes) {
+                        theme = themes[theme];
+                        var selected = "";
+                        if (theme === params.theme) {
+                            selected = 'class="dropdown-selected"'
+                            editor.setTheme("ace/theme/"+params.theme);
+                        }
+                        $('#dd-theme').append('<li role="presentation">'
+                                                + '<a id="'+theme+'" '+selected+' href="#" tabindex="-1" role="menuitem">'
+                                                + theme 
+                                                + '</a> </li>');
+                    }
                     $('ul#dd-theme li a').click(function (e) {
-                        params['theme'] = $(this).attr('id')
-                        var search = Object.keys(params).map(function(k) { return k+"="+params[k] }, params ).join("&")
-                        window.location.replace(window.location.origin + "/?" + search)
+                        editor.setTheme("ace/theme/"+$(this).attr('id'));
+                        $('#dd-theme li a').removeClass('dropdown-selected')
+                        $(this).addClass('dropdown-selected');
                         e.preventDefault();
                         return false;
                     });
-                    this.hidden = false;
-                    $('#hide_preview').click(function (e) {
-                        if (this.hidden) {
-                            this.hidden = false;
-                            $("#hide_preview").html($("#hide_preview").html().replace("Hide", "Show"));
-                            $('#preview').show();
-                            $('#editor').css('width', '50%');
-                            $('#editor').resize()
+
                             e.preventDefault();
                         } else {
                             $("#hide_preview").html($("#hide_preview").html().replace("Show", "Hide"));
@@ -696,7 +734,6 @@
 
                     // get the textarea element 
                     window.editor = ace.edit("editor");
-                    editor.setTheme("ace/theme/"+params.theme);
                     editor.getSession().setMode("ace/mode/"+params.format);
                     editor.setReadOnly(true);
                     editor.setShowPrintMargin(false);
