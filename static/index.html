@@ -28,9 +28,17 @@
             body {
                 overflow: hidden;
             }
+            footer {
+                height:30px;
+            }
+            footer a:visited,
+            footer a:active,
+            footer a:hover {
+                color: #ffffff;
+            }
             #preview {
                 top: 40px;
-                bottom: 0;
+                bottom: 30px;
                 left: 50%;
                 right: 0;
                 margin: 0;
@@ -130,12 +138,12 @@
                 background-color: #729fcf;
             }
             #editor {
-                bottom: 0;
                 left: 0;
                 margin: 0;
                 position: fixed;
                 right: 0;
                 top: 40px;
+                bottom: 30px;
                 width: 50%;
             }
             #overlay {
@@ -592,7 +600,16 @@
         </section>
         <section id='editor'></section>
         <section id='preview'></section>
-        <!-- NEW -->
-        <!-- /NEW -->
+        <footer class="navbar navbar-inverse navbar-fixed-bottom">
+            <div class="navbar-inner">
+                <div class="container">
+                    <p class="navbar-text">
+                        <small>
+                            Yet Another Collaborative Editor by <a href="http://b.pratz.net">Bernard `Guyzmo` Pratz</a>, 2013, under the <a href="">AGPLv3</a>.
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </footer>
     </body>
 </html>
