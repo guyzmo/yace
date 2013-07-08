@@ -624,20 +624,26 @@
                     }(window.location.search));
 
                     // load filetype menu
+                    var selected = "";
+                    if ('markdown' === params.format)
+                        selected = 'class="dropdown-selected"'
+                        //selected = '<span class="icon-ok-circle"></span>&nbsp;';
                     $('#dd-filetype').append('<li role="presentation">'
-                                            + '<a id="markdown" href="#" tabindex="-1" role="menuitem">'
+                                            + '<a id="markdown" '+selected+' href="#" tabindex="-1" role="menuitem">'
+                                            // + selected
                                             + 'Markdown'
                                             + '</a> </li>')
                     $('#dd-filetype').append('<li class="divider" role="presentation"></li>')
                     for (var lang in Object.keys(languages)) {
                         lang = Object.keys(languages)[lang];
+                        var selected = "";
+                        if (lang === params.format)
+                            selected = 'class="dropdown-selected"'
                         $('#dd-filetype').append('<li role="presentation">'
-                                                + '<a id="'+lang+'" href="#" tabindex="-1" role="menuitem">'
+                                                + '<a id="'+lang+'" '+selected+' href="#" tabindex="-1" role="menuitem">'
                                                 + lang 
-                                                + '</a> </li>')
+                                                + '</a> </li>');
                     }
-
-                    // set up the dropdown menu actions
                     $('ul#dd-filetype li a').click(function (e) {
                         params['format'] = $(this).attr('id')
                         var search = Object.keys(params).map(function(k) { return k+"="+params[k] }, params ).join("&")
