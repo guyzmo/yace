@@ -865,44 +865,88 @@
         <header class="navbar navbar-inverse navbar-fixed-top">
             <div class="navbar-inner">
                 <div class="container">
-                    <a class="brand" href="#">Yet another collaborative editor</a>
-                    <ul class="nav" role="navigation">
-                        <li class="dropdown">
-                        <a id="drop1" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#"> Filetype <b class="caret"></b></a>
-                        <ul id="dd-filetype" class="dropdown-menu" aria-labelledby="drop1" role="menu">
+                    <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="#" title="Yet Another Collaborative Editor">YACE</a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav" role="navigation">
+                            <li class="dropdown">
+                                <a id="drop1" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#"> Files <b class="caret"></b></a>
+                                <ul id="dd-files" class="dropdown-menu" aria-labelledby="drop1" role="menu">
+                                    <li class="dropdown-submenu">
+                                        <a id="drop10" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#"> Filetype </a>
+                                        <ul id="dd-filetype" class="dropdown-menu" aria-labelledby="drop10" role="menu"> </ul>
+                                    </li>
+                                    <li class="dropdown-submenu">
+                                        <a id="drop11" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#"> Export </a>
+                                        <ul id="dd-export" class="dropdown-menu">
+                                            <li role="presentation"> <a id="gist" class="disabled-link" href="#" tabindex="-1" role="menuitem"> Export to Gist </a> </li>
+                                            <li role="presentation"> <a id="wiki" class="disabled-link" href="#" tabindex="-1" role="menuitem"> Export to wiki </a> </li>
+                                            <li class="divider" role="presentation"></li>
+                                            <li role="presentation"> <a id="download" class="disabled-link" href="#" tabindex="-1" role="menuitem">Download as raw </a> </li>
+                                            <li role="presentation"> <a id="pdf" class="disabled-link" href="#" tabindex="-1" role="menuitem"> Download as pdf </a> </li>
+                                            <li role="presentation"> <a id="odt" class="disabled-link" href="#" tabindex="-1" role="menuitem"> Download as odt </a> </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown">
+                                <a id="drop2" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#"> Editor <b class="caret"></b></a>
+                                <ul id="dd-editor" class="dropdown-menu" aria-labelledby="drop2" role="menu">
+                                    <li class="dropdown-submenu">
+                                        <a id="drop20" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#">Show</a>
+                                        <ul id="dd-show" class="dropdown-menu" aria-labelledby="drop20" role="menu"> 
+                                            <li role="presentation"> <a id="show_both" href="#" tabindex="-1" role="menuitem">Show both views</a> </li>
+                                            <li role="presentation"> <a id="show_editor" href="#" tabindex="-1" role="menuitem">Show editor</a> </li>
+                                            <li role="presentation"> <a id="show_preview" href="#" tabindex="-1" role="menuitem">Show preview</a> </li>
+                                        </ul>
+                                    </li>
+                                    <li class="divider" role="presentation"></li>
+                                    <li class="dropdown-submenu">
+                                        <a id="drop21" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#"> Theme </a>
+                                        <ul id="dd-theme" class="dropdown-menu" aria-labelledby="drop21" role="menu"> </ul>
+                                    </li>
+                                    <li role="presentation"> <a id="ace_wrap"  href="#" tabindex="-1" role="menuitem">Wrap lines</a></li>
+                                    <li role="presentation"> <a id="ace_lines" href="#" tabindex="-1" role="menuitem">Toggle lines</a></li>
+                                    <li role="presentation"> <a id="ace_invis" href="#" tabindex="-1" role="menuitem">Toggle invisibles</a></li>
+                                    <li role="presentation"> 
+                                    <li class="dropdown-submenu">
+                                        <a id="drop22" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#">Keymapping</a>
+                                        <ul id="dd-keys" class="dropdown-menu" aria-labelledby="drop22" role="menu">
+                                            <li role="presentation"> <a id="ace_kbd_default" href="#" tabindex="-1" role="menuitem">Default keymapping</a> </li>
+                                            <li role="presentation"> <a id="ace_kbd_emacs" href="#" tabindex="-1" role="menuitem">Emacs keymapping</a> </li>
+                                            <li role="presentation"> <a id="ace_kbd_vim" href="#" tabindex="-1" role="menuitem">Vim keymapping</a> </li>
+                                        </ul>
+                                    </li>
+                                    <li class="divider" role="presentation"></li>
+                                    <li role="presentation"> <a id="prev_ro" class="" href="#" tabindex="-1" role="menuitem">Make preview readonly</a> </li>
+                                    <li class="dropdown-submenu">
+                                        <a id="prev_theme" href="#" tabindex="-1" role="menuitem">Preview theme</a>
+                                        <ul id="dd-export" class="dropdown-menu" aria-labelledby="prev_theme" role="menu">
+                                            <li role="presentation"> <a id="preview-classic" class="disabled-link" href="#" tabindex="-1" role="menuitem">Default</a> </li>
+                                            <li role="presentation"> <a id="preview-classic" class="disabled-link" href="#" tabindex="-1" role="menuitem">Raw</a> </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown">
+                                <a id="drop3" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#">RTFM<b class="caret"></b></a>
+                                <ul id="dd-more" class="dropdown-menu" aria-labelledby="drop3" role="menu">
+                                    <li role="presentation"> <a id="rtfm_help" href="#" tabindex="-1" role="menuitem">Help</a> </li>
+                                    <li role="presentation"> <a id="rtfm_syntax" class="disabled-link" href="#" tabindex="-1" role="menuitem">Syntax</a> </li>
+                                    <li class="divider" role="presentation"></li>
+                                    <li role="presentation"> <a id="rtfm_about" href="#" tabindex="-1" role="menuitem">About</a> </li>
+                                </ul>
+                            </li>
                         </ul>
-                        </li>
-                        <li class="dropdown">
-                        <a id="drop2" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#">Theme <b class="caret"></b></a>
-                        <ul id="dd-theme" class="dropdown-menu" aria-labelledby="drop2" role="menu">
-                            <li role="presentation"> <a id="twilight" href="#" tabindex="-1" role="menuitem">Twilight</a> </li>
-                            <li role="presentation"> <a id="textmate" href="#" tabindex="-1" role="menuitem">Textmate</a> </li>
-                        </ul>
-                        </li>
-                        <li class="dropdown">
-                        <a id="drop2" class="dropdown-toggle" data-toggle="dropdown" role="button" href="#">More<b class="caret"></b></a>
-                        <ul id="dd-more" class="dropdown-menu" aria-labelledby="drop2" role="menu">
-                            <li role="presentation"> <a id="help" href="#" tabindex="-1" role="menuitem">Help</a> </li>
-                            <li role="presentation"> <a id="syntax" href="#" tabindex="-1" role="menuitem">Syntax</a> </li>
-                            <li role="presentation"> <a id="about" href="#" tabindex="-1" role="menuitem">About</a> </li>
-                        </ul>
-                        </li>
-                    </ul>
-                    <div class="navbar-form pull-right">
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-inverse" id="hide_preview">Hide preview</button>
-                            <button type="button" class="btn btn-success" id="run_script">Run script</button>
-                            <button class="btn btn-inverse dropdown-toggle" data-toggle="dropdown" href="#">
-                            Export<span class="caret"></span>
-                            </button>
-                            <ul id="dd-export" class="dropdown-menu">
-                                <li role="presentation"> <a id="gist" href="#" tabindex="-1" role="menuitem">Export to Gist</a> </li>
-                                <li role="presentation"> <a id="wiki" href="#" tabindex="-1" role="menuitem">Export to wiki</a> </li>
-                                <li class="divider" role="presentation"></li>
-                                <li role="presentation"> <a id="download" href="#" tabindex="-1" role="menuitem">Download as raw</a> </li>
-                                <li role="presentation"> <a id="pdf" href="#" tabindex="-1" role="menuitem">Download as pdf</a> </li>
-                                <li role="presentation"> <a id="odt" href="#" tabindex="-1" role="menuitem">Download as odt</a> </li>
-                            </ul>
+                        <div class="navbar-form pull-right">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-success" id="run_script">Run script</button>
+                            </div>
                         </div>
                     </div>
                 </div>
