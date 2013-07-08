@@ -12,7 +12,6 @@
         <script src="terminal/jquery.mousewheel.js"></script>  <!-- -->
         <script src="terminal/jquery.terminal-0.6.3.js"></script>  <!--  -->
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
         <link href="terminal/jquery.terminal.css" rel="stylesheet" media="screen">
         <script src="jsrepl/jsrepl.js" id="jsrepl-script"></script>
         <!-- Hallo -->
@@ -155,12 +154,53 @@
                 border-radius: 10px;;
                 background: rgba(255,255,255,0.5);
             }
+            #rtfm {
+                z-index: 9999;
+                border-radius: 10px;;
+                background: rgba(255,255,255,0.5);
+            }
             .transparent {
                 opacity: 0.5;
                 width: 300px;
             }
         </style>
         <script>
+            // rtfm
+            var bs_rtfm = function(title, content) {
+                // $('#modal-rtfm').html('   <button data-dismiss="rtfm" class="close" type="button">×</button>'
+                                    // + '   <div class="modal-heading">'+title+'</div>'
+                                    // + '   <div class="modal-body">'+content+'</div>'
+                                    // + '   <div class="modal-footer"><a href="#" data-dismiss="rtfm" class="btn primary">Dismiss</a></div>'
+                                    // );
+                $('#rtfm').html( '<div id="r" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">'
+                                + '    <div class="modal-header">'
+                                + '        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>'
+                                + '        <h3 id="myModalLabel">'+title+'</h3>'
+                                + '    </div>'
+                                + '    <div class="modal-body">'
+                                +           content
+                                + '    </div>'
+                                + '    <div class="modal-footer">'
+                                + '        <button class="btn" data-dismiss="modal" aria-hidden="true">Dismiss</button>'
+                                + '    </div>'
+                                + '</div>')
+                $("#rtfm .modal").on("show", function() {
+                    $("#modal-rtfm .close").on("click", function(e) {
+                        $("#modal-rtfm").modal('hide');
+                    });
+                });
+                $("#rtfm .modal").on("hide", function() {
+                    $("#modal-rtfm .close").off("click");
+                });
+                $("#rtfm .modal").on("hidden", function() {
+                    $("#modal-rtfm").remove();
+                });
+                $("#rtfm .modal").modal({
+                    "backdrop" : "static",
+                    "keyboard" : true,
+                    "show" : true 
+                });
+            }
             // notifications
             bs_progress = function(title, message, loaded) {
                 var ret = '<div class="alert alert-info fade in transparent">';
@@ -422,6 +462,60 @@
                         }
                         return false;
                     });
+                    // set up preview theme submenu TODO
+
+                    $('#rtfm_about').click(function (e) {
+                        // set up RTFM about box
+                        bs_rtfm("About YACE",
+                          '<p>YACE stands for "Yet Another Collaborative Editor". '
+                        + 'Based on `Share.js`,<br />'
+                        + 'it features all modern concepts of online edition:</p>'
+                        + ''
+                        + '<h2>Maintainer</h2>'
+                        + ''
+                        + '<p><a href="http://b.pratz.net">Bernard `Guyzmo` Pratz</a></p>'
+                        + ''
+                        + '<h2>Dependencies</h2>'
+                        + ''
+                        + '<ul>'
+                        + '    <li>node.js</li><li>share.js</li><li>connect</li>'
+                        + '    <li>browserchannel</li><li>redis</li><li>showdown</li>'
+                        + '    <li>twitter-bootstrap</li><li>rangy-browser</li>'
+                        + '    <li>googlediff</li><li>hallo.js</li><li>jquery</li>'
+                        + '</ul>'
+                        + ''
+                        + '<h2>License</h2>'
+                        + ''
+                        + '<a>Under the AGPLv3</a>');
+                        e.preventDefault();
+                    });
+                    $('#rtfm_help').click(function (e) {
+                        // set up RTFM about box
+                        bs_rtfm("Help", "<p>Help, I need somebody<br />"
+                                        + "Help, not just anybody<br />"
+                                        + "Help, you know I need someone, help<br />"
+                                        + "</p><p>"
+                                        + "When I was younger so much younger than today<br />"
+                                        + "I never needed anybody's help in any way<br />"
+                                        + "But now these days are gone, I'm not so self assured<br />"
+                                        + "Now I find I've changed my mind and opened up the doors<br />"
+                                        + "</p><p>"
+                                        + "Help me if you can, I'm feeling down<br />"
+                                        + "And I do appreciate you being round<br />"
+                                        + "Help me get my feet back on the ground<br />"
+                                        + "Won't you please, please help me<br />"
+                                        + "</p><p>"
+                                        + "And now my life has changed in oh so many ways<br />"
+                                        + "My independence seems to vanish in the haze<br />"
+                                        + "But every now and then I feel so insecure<br />"
+                                        + "I know that I just need you like I've never done before<br />"
+                                        + "</p><p>The Beatles</p>");
+
+                        e.preventDefault();
+                    });
+
+
+
 
                     // get the textarea element 
                     window.editor = ace.edit("editor");
@@ -597,6 +691,8 @@
         <section id="overlay" class="alert">
             <div id="alert"></div>
             <div id="pbar"></div>
+        </section>
+        <section id="rtfm">
         </section>
         <section id='editor'></section>
         <section id='preview'></section>
