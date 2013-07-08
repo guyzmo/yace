@@ -7,10 +7,25 @@
   },
   "homepage": "http://m0g.net",
   "version": "0.0.1",
-  "dependencies": {},
+  "dependencies": {
+    "share": "0.6.2",
+    "connect": "2.8.3",
+    "browserchannel": "1.0.4",
+    "redis": "0.8.4",
+    "showdown": "0.3.1",
+    "twitter-bootstrap": "2.1.1",
+    "rangy-browser": "1.2.3-1",
+    "googlediff": "0.1.0",
+    "hallo": "1.0.2",
+    "jquery": "1.8.3"},
   "devDependencies": {
+    "coffee-script": "1.6.3",
+    "grunt": "0.4.1",
+    "recess": "1.1.9",
+    "jshint": ">=2.1.4",
     "uglify-js": ">=1.2.6",
-    "phantomjs": "0.2.x"
+    "phantomjs": "0.2.x",
+    "mustache": "0.7.2" // dep, or dev-dep?
   },
   "docco_husky": {
     "output_dir": "docs",
