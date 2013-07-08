@@ -956,6 +956,9 @@
                 } catch (e) {
                     console.error(e);
                 }
+                $(".disabled-link").click(function(event) {
+                    event.preventDefault();
+                });
             }
         </script>
     </head>
