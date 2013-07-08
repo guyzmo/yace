@@ -221,12 +221,12 @@
                 });
             }
             // notifications
-            bs_progress = function(title, message, loaded) {
-                var ret = '<div class="alert alert-info fade in transparent">';
-                ret +=    '    <h4 class="alert-heading">'+title+'</h4>';
-                ret +=    '    <p>'+message+'</p>';
-                ret +=    '    </p>';
-                ret +=    '</div>';
+            var bs_progress = function(title, message, loaded) {
+                var ret = '<div class="alert alert-info fade in transparent">'
+                        + '    <h4 class="alert-heading">'+title+'</h4>'
+                        + '    <p>'+message+'</p>'
+                        + '    </p>'
+                        + '</div>';
                 $('#alert').html(ret);
                 $('#overlay').fadeIn();
                 $('#pbar').html('<div class="progress progress-striped active">'
@@ -241,10 +241,16 @@
                     },
                     hide: function() {
                         $('#overlay').fadeOut();
+                        $("#overlay").on("hidden", function() {
+                            $('.alert .close').off('click')
+                            $('#alert_ok').off('click')
+                            $('#alert_abt').off('click')
+                            $("#overlay").remove();
+                        });
                     }
                 }
             }
-            bs_info = function(title, message, cb, ok, cancel) {
+            var bs_info = function(title, message, cb, ok, cancel) {
                 var ret = '<div class="alert alert-info fade in transparent">';
                 ret +=    '    <button data-dismiss="alert" class="close" type="button">×</button>';
                 ret +=    '    <h4 class="alert-heading">'+title+'</h4>';
@@ -262,9 +268,16 @@
                     $('#alert_ok').on('click', function() {$("#overlay").hide(); cb(true);});
                     $('#alert_abt').on('click', function() {$("#overlay").hide(); cb(false);});
                 }
+                $('.alert .close').on('click', function() {$('#overlay').hide();});
                 $('#overlay').fadeIn();
+                $("#overlay").on("hidden", function() {
+                    $('.alert .close').off('click')
+                    $('#alert_ok').off('click')
+                    $('#alert_abt').off('click')
+                    $("#overlay").remove();
+                });
             }
-            bs_alert = function(title, message, cb, ok, cancel) {
+            var bs_alert = function(title, message, cb, ok, cancel) {
                 var ret = '<div class="alert alert-error fade in">';
                 ret +=    '    <button data-dismiss="alert" class="close" type="button">×</button>';
                 ret +=    '    <h4 class="alert-heading">'+title+'</h4>';
@@ -282,7 +295,15 @@
                     $('#alert_ok').on('click', function() {$("#overlay").hide(); cb(true);});
                     $('#alert_abt').on('click', function() {$("#overlay").hide(); cb(false);});
                 }
+                $('.alert .close').on('click', function() {$('#overlay').hide();});
                 $('#overlay').fadeIn();
+                $("#overlay").on("hidden", function() {
+                    $('.alert .close').off('click')
+                    $('#alert_ok').off('click')
+                    $('#alert_abt').off('click')
+                    $("#overlay").remove();
+                });
+            }
             }
 
             // setup languages
