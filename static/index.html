@@ -59,15 +59,18 @@
                 bottom: 30px;
                 left: 50%;
                 right: 0;
-                margin: 0;
+                padding: 5px;
                 position: fixed;
                 float: left;
                 width: 50%;
-            }    
-            #preview {
+                overflow: auto;
                 display: block;
                 line-height: 1.5em;
             }
+            .icon-inline {
+                display: inline;
+            }
+            /* hallo config */
             #preview h1, h2 {
                 font-family: "Georgia", serif;
                 font-variant: small-caps;
@@ -75,10 +78,10 @@
                 padding-bottom: 0.5em;
             }
             #preview h1 {
-                font-size: 24pt;
+                font-size: 20pt;
             }
             #preview h2 {
-                font-size: 20pt;
+                font-size: 16pt;
             }
             #preview ul {
                 margin-top: 0px;
@@ -87,15 +90,15 @@
             #preview li {
                 font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, FreeSerif, serif;
                 font-size: 16pt;
-                line-height: 21pt;
+                line-height: 17pt;
             }
             #preview p {
                 margin-top: 0px;
                 margin-bottom: 0.5em;
-                text-indent: 2em;
+                /* text-indent: 2em; */
                 font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, FreeSerif, serif;
-                font-size: 16pt;
-                line-height: 21pt;
+                font-size: 12pt;
+                line-height: 17pt;
             }
             #preview .download {
                 text-align: center;
@@ -155,6 +158,7 @@
             div.hallotoolbar .dropdown-menu .selected {
                 background-color: #729fcf;
             }
+            /* /hallo */
             #editor {
                 left: 0;
                 margin: 0;
