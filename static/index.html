@@ -672,17 +672,114 @@
                         return false;
                     });
 
-                            e.preventDefault();
-                        } else {
-                            $("#hide_preview").html($("#hide_preview").html().replace("Show", "Hide"));
-                            this.hidden = true;
-                            $('#preview').hide();
-                            $('#editor').css('width', '100%');
-                            $('#editor').resize()
-                            e.preventDefault();
-                        }
-                        return false;
+                    // set up editor menu
+                    // set up wrap lines (TODO handle state pref with a cookie)
+                    $('#ace_wrap').click(function (e) {
+                        var wrap = editor.getSession().getUseWrapMode();
+                        editor.getSession().setUseWrapMode(!wrap);
+                        if (!wrap)
+                            $('#ace_wrap').addClass('dropdown-selected');
+                        else
+                            $('#ace_wrap').removeClass('dropdown-selected');
+                        e.preventDefault();
                     });
+                    // set up toggle lines (TODO handle state pref with a cookie)
+                    $('#ace_lines').addClass('dropdown-selected');
+                    $('#ace_lines').click(function (e) {
+                        var gutter = editor.renderer.getShowGutter();
+                        editor.renderer.setShowGutter(!gutter);
+                        if (!gutter)
+                            $('#ace_lines').addClass('dropdown-selected');
+                        else
+                            $('#ace_lines').removeClass('dropdown-selected');
+                        e.preventDefault();
+                    });
+                    // set up invisibles
+                    $('#ace_invis').click(function (e) {
+                        var invisibles = editor.renderer.getShowInvisibles();
+                        editor.renderer.setShowInvisibles(!invisibles);
+                        if (!invisibles)
+                            $('#ace_invis').addClass('dropdown-selected');
+                        else
+                            $('#ace_invis').removeClass('dropdown-selected');
+                        e.preventDefault();
+                    });
+                    // set up keyboard shortcuts for ACE
+                    function load_vim_kbd() {
+                        ace.require("ace/lib/net").loadScript("/ace/keybinding-vim.js",
+                        function() {
+                            editor.setKeyboardHandler(ace.require("ace/keyboard/vim").handler); 
+                        });
+                        $('#ace_kbd_vim').addClass('dropdown-selected');
+                        $('#ace_kbd_emacs').removeClass('dropdown-selected');
+                        $('#ace_kbd_default').removeClass('dropdown-selected');
+                    }
+                    function load_emacs_kbd() {
+                        ace.require("ace/lib/net").loadScript("/ace/keybinding-emacs.js",
+                        function() {
+                            editor.setKeyboardHandler(ace.require("ace/keyboard/emacs").handler); 
+                        });
+                        $('#ace_kbd_vim').removeClass('dropdown-selected');
+                        $('#ace_kbd_emacs').addClass('dropdown-selected');
+                        $('#ace_kbd_default').removeClass('dropdown-selected');
+                    }
+                    function load_default_kbd() {
+                        editor.setKeyboardHandler();
+                        $('#ace_kbd_vim').removeClass('dropdown-selected');
+                        $('#ace_kbd_emacs').removeClass('dropdown-selected');
+                        $('#ace_kbd_default').addClass('dropdown-selected');
+                    }
+                    $('#ace_kbd_default').addClass('dropdown-selected');
+                    $('#ace_kbd_vim').click(load_vim_kbd);
+                    $('#ace_kbd_emacs').click(load_emacs_kbd);
+                    $('#ace_kbd_default').click(load_default_kbd);
+
+                    // set up the show dropdown submenu
+                    $('#show_both').click(function (e) {
+                            $('#editor').css({'width': '50%'})
+                                        .resize()
+                                        .show();
+                            $('#preview').css({'width': '50%', 'left': '50%'})
+                                         .resize()
+                                         .show();
+                            $('#show_both').addClass('dropdown-selected');
+                            $('#show_editor').removeClass('dropdown-selected');
+                            $('#show_preview').removeClass('dropdown-selected');
+                            e.preventDefault();
+                    });
+                    $('#show_editor').click(function (e) {
+                            $('#preview').hide();
+                            $('#editor')
+                            $('#editor').css('width', '100%').resize().show();
+                            $('#show_both').removeClass('dropdown-selected');
+                            $('#show_editor').addClass('dropdown-selected');
+                            $('#show_preview').removeClass('dropdown-selected');
+                            e.preventDefault();
+                    });
+                    $('#show_preview').click(function (e) {
+                            $('#editor').hide()
+                            $('#preview').css({'width': '100%', 'left': '0'})
+                                         .resize()
+                                         .show();
+                            $('#show_both').removeClass('dropdown-selected');
+                            $('#show_editor').removeClass('dropdown-selected');
+                            $('#show_preview').addClass('dropdown-selected');
+                            e.preventDefault();
+                    });
+
+                    // set up export submenu TODO
+
+                    // set up preview read only TODO
+                    $('#prev_ro').click(function (e) {
+                        var ro = $('#preview').attr('contenteditable') === "false";
+                        $('#preview').attr('contenteditable', ro);
+                        if (!ro)
+                            $('#prev_ro').addClass('dropdown-selected');
+                        else
+                            $('#prev_ro').removeClass('dropdown-selected');
+                        e.preventDefault();
+                    });
+
                     // set up preview theme submenu TODO
 
                     $('#rtfm_about').click(function (e) {
@@ -772,7 +869,7 @@
                                 // showdown setting
                                 var converter = new Showdown.converter();
                                 // hallo setting
-                                $('#preview').hallo({
+                                this.preview = $('#preview').hallo({
                                     plugins: {
                                         'halloformat': {},
                                         'halloblock': {},
@@ -842,7 +939,8 @@
                                     updateHtml(doc.snapshot);
                                     event.preventDefault()
                                 });
-                                doc.on('change', function(event, data) {
+                                doc.on('change', function(op) {
+                                    console.warn(op);
                                     if (!skip_update) {
                                         updateHtml(doc.snapshot);
                                     }
