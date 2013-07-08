@@ -607,6 +607,8 @@
                 term.hide()
             }
 
+            ////////////////////////////////////////////////////////////////////////
+
             // load at startup
             window.onload = function() {
                 try {
@@ -651,6 +653,7 @@
                         e.preventDefault();
                         return false;
                     });
+
                     // load theme menu
                     for (var theme in themes) {
                         theme = themes[theme];
