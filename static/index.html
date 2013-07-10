@@ -2,27 +2,18 @@
 <html lang="en">
     <head>
         <title>Yet another collaborative editor</title>
-        <script src="bcsocket.js"></script>                <!-- add transport -->
-        <script src="markdown/showdown.js"></script>       <!-- Showdown -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="jquery-2.0.0.js"></script>            <!-- load JQuery -->
+        <script src="jquery-ui.min.js"></script>           <!-- load JQuery UI -->
+        <script src="jquery.cookie.js"></script>           <!-- load JQuery Cookies -->
+        <script src="bootstrap/js/bootstrap.js"></script>  <!-- bootstrap UI -->
+        <script src="rloader1.5.4_min.js"></script>        <!-- Dynamic resources loader -->
         <script src="ace/ace.js"></script>                 <!-- ACE Editor -->
+        <script src="bcsocket.js"></script>                <!-- add transport -->
         <script src="webclient/share.js"></script>         <!-- ShareJS -->
         <script src="webclient/ace.js"></script>           <!-- helper to attach textarea to ShareJS server -->
-        <script src="jquery-2.0.0.js"></script>            <!-- load JQuery -->
-        <script src="bootstrap/js/bootstrap.js"></script>  <!-- bootstrap UI -->
-        <script src="terminal/jquery.mousewheel.js"></script>  <!-- -->
-        <script src="terminal/jquery.terminal-0.6.3.js"></script>  <!--  -->
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href="terminal/jquery.terminal.css" rel="stylesheet" media="screen">
-        <script src="jsrepl/jsrepl.js" id="jsrepl-script"></script>
-        <!-- Hallo -->
-        <script src="googlediff.js"></script>              <!-- Google diff -->
-        <script src="rangy-core.js"></script>              <!-- load Rangy Core -->
-        <script src="jquery-ui.min.js"></script>           <!-- load JQuery UI -->
-        <script src="to-markdown.js"></script>             <!-- html to markdown converter -->
-        <script src="hallo.js"></script>                   <!-- html live editor -->
-        <link href="hallo.css" rel="stylesheet">
+        <script id="jsrepl-script"></script>               <!-- placeholder for jsrepl -->
         <link href="/font-awesome/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
-        <link href="/font-awesome/css/font-awesome.css" rel="stylesheet">
         <style>
             body {
                 overflow: hidden;
@@ -71,6 +62,13 @@
                 display: inline;
             }
             /* hallo config */
+            .hallotoolbar {
+                position: fixed;
+                top: 0px;
+                right: 50px;
+                width: 500px;
+                z-index: 100000;
+            }
             #preview h1, h2 {
                 font-family: "Georgia", serif;
                 font-variant: small-caps;
@@ -478,41 +476,17 @@
                                 prompt: "roy> " },
 
             }
-            var themes = [
-                "ambiance",
-                "chaos",
-                "chrome",
-                "clouds",
-                "clouds_midnight",
-                "cobalt",
-                "crimson_editor",
-                "dawn",
-                "dreamweaver",
-                "eclipse",
-                "github",
-                "idle_fingers",
-                "kr",
-                "merbivore",
-                "merbivore_soft",
-                "mono_industrial",
-                "monokai",
-                "pastel_on_dark",
-                "solarized_dark",
-                "solarized_light",
-                "terminal",
-                "textmate",
-                "tomorrow",
-                "tomorrow_night_blue",
-                "tomorrow_night_bright",
-                "tomorrow_night_eighties",
-                "tomorrow_night",
-                "twilight",
-                "vibrant_ink",
-                "xcode"
-            ];
 
             // load interpreter
             function load_interpreter(lang) {
+                if (window.jsrepl === undefined) {
+                    window.jsrepl = {};
+                    $('#jsrepl-script').attr('src', 'jsrepl/jsrepl.js');
+                    $.rloader([ {src:'jsrepl/jsrepl.js', async:false},
+                                {event:'onready', func:'load_interpreter',
+                                                  arg:lang} ]);
+                    return;
+                }
                 if (!lang.input_cb) lang.input_cb = function(command, term) {
                                                 if (command !== '') {
                                                     try {
@@ -574,17 +548,29 @@
                     window.jsrepl.on('output', $.proxy(lang.output_cb, window))
                     window.jsrepl.on('error', $.proxy(lang.error_cb, window))
                 } catch (e) {
-                    bs_alert('REPL Failure', e);
+                    // bs_alert('REPL Failure', e);
+                    console.error("REPL Failure: ", e)
                     load_terminal();
                 }
             }
             
             // load terminal
-            function load_terminal(input_fun, prt, grts) {
-                if (prt === undefined) prt = "js>"
-                if (grts === undefined) grts = '[[gb;#0f0;#000]Javascript interpreter:]'
-                if (input_fun === undefined) {
-                    function input_fun(command, term) {
+            function load_terminal() {
+                var input_fun, prt, grts;
+                if (window.term === undefined) {
+                    window.term = {};
+                    $.rloader([ {src:'terminal/jquery.mousewheel.js'},
+                                {src:'terminal/jquery.terminal-0.6.3.js'},
+                                {src:'terminal/jquery.terminal.css'},
+                                {src:'terminal/jquery.terminal.css'},
+                                {event:'onready', func:'load_terminal',
+                                                arg:arguments} ]);
+                    return;
+                }
+                if (arguments[0] && arguments[0][0] && arguments[0].length === 0) {
+                    prt = "js> "
+                    grts = '[[gb;#0f0;#000]Javascript interpreter:]'
+                    input_fun = function(command, term) {
                         if (command !== '') {
                             try {
                                 var result = window.eval(command);
@@ -597,7 +583,13 @@
                             term.echo('');
                         }
                     }
+                } else {
+                    arguments = arguments[0]
+                    input_fun = arguments[0];
+                    prt = arguments[1];
+                    grts = arguments[2];
                 }
+
                 window.term = $('#preview').terminal(
                             $.proxy(input_fun, window), {
                             greetings: grts,
@@ -609,251 +601,471 @@
 
             ////////////////////////////////////////////////////////////////////////
 
+            var text_formats = {markdown : {init: init_markdown}}
+
+            function init_markdown() {
+                rangy.init();
+                $('#run_script').hide()
+                // showdown setting
+                var converter = new Showdown.converter();
+                // hallo setting
+                this.preview = $('#preview').hallo({
+                    plugins: {
+                        'halloindicator': {},
+                        'halloheadings': {},
+                        'halloformat': {},
+                        'halloblock': {},
+                        'hallojustify': {},
+                        'hallolists': {},
+                        //'hallolink': {},
+                        'halloreundo': {},
+                        'halloimage': {
+                            search: function(query, limit, offset, successCallback) {
+                                response = {offset: offset, total: limit + 1, assets: searchresult.slice(offset, offset+limit)};
+                                successCallback(response);
+                            },
+                            suggestions: null,
+                            uploadUrl: function() {
+                            return '/some/example/url'
+                            }
+                        }
+                    },
+                    editable: true,
+                    toolbar: 'halloToolbarFixed'
+                });
+                var markdownize = function(content) {
+                    var html = content.split("\n").map($.trim).filter(function(line) {
+                        return line != "";
+                    }).join("\n");
+                    return toMarkdown(html);
+                };
+                var htmlize = function(content) {
+                    return converter.makeHtml(content);
+                };
+                var showSource = function(content) {
+                    var markdown = markdownize(content);
+                    if (doc.getText() == markdown) {
+                        return;
+                    }
+                    editor.getSession().getDocument().setValue(markdown);
+                }; 
+                var updateHtml = function(content) {
+                    if (markdownize($('#preview').html()) == content) {
+                        return;
+                    }
+                    var html = htmlize(content);
+                    $('#preview').html(html);
+                };
+                var skip_update = false;
+                var hallomodified = function(event, data) {
+                    var dmp = new diff_match_patch();
+                    var edoc = editor.getSession().getDocument();
+                    var diffs = dmp.diff_main(doc.snapshot, markdownize(data.content));
+                    var pos = 0;
+                    for (var i in diffs) {
+                        var op = diffs[i][0];
+                        var st = diffs[i][1];
+                        if (op === 0) {
+                            pos += st.length;
+                        } else if (op === 1) {
+                            pos += st.length;
+                            skip_update = true;
+                            if (st === "\n\n") {
+                                edoc.insert(edoc.indexToPosition(pos-2), st);
+                            } else
+                                edoc.insert(edoc.indexToPosition(pos-1), st);
+                            skip_update = false;
+                        } else if (op === -1) {
+                            var start = edoc.indexToPosition(pos);
+                            var end = edoc.indexToPosition(pos+st.length);
+                            var range = ace.require('ace/range').Range.fromPoints(start, end)
+                            skip_update = true;
+                            edoc.remove(range);
+                            skip_update = false;
+                        }
+
+                    }
+                    event.preventDefault()
+                };
+                $('#preview').bind('hallomodified', hallomodified);
+                $('#editor').on('change', function(event, data) {
+                    updateHtml(doc.snapshot);
+                    event.preventDefault()
+                });
+                doc.on('change', function(op) {
+                    console.warn(op);
+                    if (!skip_update) {
+                        updateHtml(doc.snapshot);
+                    }
+                });
+                updateHtml(doc.snapshot);
+
+                if ($.cookie('yace.preview.ro') === 'true') {
+                    $('#preview').attr('contenteditable', false);
+                    $('#prev_ro').addClass('dropdown-selected');
+                }
+            }
+
+            ////////////////////////////////////////////////////////////////////////
+
+            var themes = [
+                "ambiance",
+                "chaos",
+                "chrome",
+                "clouds",
+                "clouds_midnight",
+                "cobalt",
+                "crimson_editor",
+                "dawn",
+                "dreamweaver",
+                "eclipse",
+                "github",
+                "idle_fingers",
+                "kr",
+                "merbivore",
+                "merbivore_soft",
+                "mono_industrial",
+                "monokai",
+                "pastel_on_dark",
+                "solarized_dark",
+                "solarized_light",
+                "terminal",
+                "textmate",
+                "tomorrow",
+                "tomorrow_night_blue",
+                "tomorrow_night_bright",
+                "tomorrow_night_eighties",
+                "tomorrow_night",
+                "twilight",
+                "vibrant_ink",
+                "xcode"
+            ];
+
+            function load_themes_menu(params) {
+                for (var theme in themes) {
+                    theme = themes[theme];
+                    var selected = "";
+                    if (theme === params.theme) {
+                        selected = 'class="dropdown-selected"'
+                    }
+                    $('#dd-theme').append('<li role="presentation">'
+                                            + '<a id="'+theme+'" '+selected+' href="#" tabindex="-1" role="menuitem">'
+                                            + theme 
+                                            + '</a> </li>');
+                }
+                $('ul#dd-theme li a').click(function (e) {
+                    editor.setTheme("ace/theme/"+$(this).attr('id'));
+                    $('#dd-theme li a').removeClass('dropdown-selected')
+                    $(this).addClass('dropdown-selected');
+                    $.cookie('yace.ace.theme', $(this).attr('id'));
+                    e.preventDefault();
+                    return false;
+                });
+            }
+
+            function load_filetype_menu(params) {
+                var selected = "";
+                if ('markdown' === params.format)
+                    selected = 'class="dropdown-selected"'
+                $('#dd-filetype').append('<li role="presentation">'
+                                        + '<a id="markdown" '+selected+' href="#" tabindex="-1" role="menuitem">'
+                                        + 'Markdown'
+                                        + '</a> </li>')
+                $('#dd-filetype').append('<li class="divider" role="presentation"></li>')
+
+                for (var lang in Object.keys(languages)) {
+                    lang = Object.keys(languages)[lang];
+                    var selected = "";
+                    if (lang === params.format)
+                        selected = 'class="dropdown-selected"'
+                    $('#dd-filetype').append('<li role="presentation">'
+                                            + '<a id="'+lang+'" '+selected+' href="#" tabindex="-1" role="menuitem">'
+                                            + lang 
+                                            + '</a> </li>');
+                }
+                $('ul#dd-filetype li a').click(function (e) {
+                    params['format'] = $(this).attr('id')
+                    var search = Object.keys(params).map(function(k) { return k+"="+params[k] }, params ).join("&")
+                    window.location.replace(window.location.origin + "/?" + search)
+                    $.cookie('yace.filetype', $(this).attr('id'));
+                    e.preventDefault();
+                    return false;
+                });
+            }
+            function load_vim_kbd() {
+                ace.require("ace/lib/net").loadScript("/ace/keybinding-vim.js",
+                function() {
+                    $.cookie('yace.ace.input_mode', 'vim');
+                    editor.setKeyboardHandler(ace.require("ace/keyboard/vim").handler); 
+                });
+                $('#ace_kbd_vim').addClass('dropdown-selected');
+                $('#ace_kbd_emacs').removeClass('dropdown-selected');
+                $('#ace_kbd_default').removeClass('dropdown-selected');
+            }
+            function load_emacs_kbd() {
+                ace.require("ace/lib/net").loadScript("/ace/keybinding-emacs.js",
+                function() {
+                    $.cookie('yace.ace.input_mode', 'emacs');
+                    editor.setKeyboardHandler(ace.require("ace/keyboard/emacs").handler); 
+                });
+                $('#ace_kbd_vim').removeClass('dropdown-selected');
+                $('#ace_kbd_emacs').addClass('dropdown-selected');
+                $('#ace_kbd_default').removeClass('dropdown-selected');
+            }
+            function load_default_kbd() {
+                editor.setKeyboardHandler();
+                $.cookie('yace.ace.input_mode', 'default');
+                $('#ace_kbd_vim').removeClass('dropdown-selected');
+                $('#ace_kbd_emacs').removeClass('dropdown-selected');
+                $('#ace_kbd_default').addClass('dropdown-selected');
+            }
+            function load_editor_menu(params) {
+                // set up wrap lines
+                $('#ace_wrap').click(function (e) {
+                    var wrap = editor.getSession().getUseWrapMode();
+                    editor.getSession().setUseWrapMode(!wrap);
+                    if (!wrap) {
+                        $.cookie('yace.ace.wrap', 'true');
+                        $('#ace_wrap').addClass('dropdown-selected');
+                    } else {
+                        $.cookie('yace.ace.wrap', 'false');
+                        $('#ace_wrap').removeClass('dropdown-selected');
+                    }
+                    e.preventDefault();
+                });
+                // set up toggle lines (TODO handle state pref with a cookie)
+                $('#ace_lines').addClass('dropdown-selected');
+                $('#ace_lines').click(function (e) {
+                    var gutter = editor.renderer.getShowGutter();
+                    editor.renderer.setShowGutter(!gutter);
+                    if (!gutter) {
+                        $.cookie('yace.ace.gutter', 'true');
+                        $('#ace_lines').addClass('dropdown-selected');
+                    } else {
+                        $.cookie('yace.ace.gutter', 'false');
+                        $('#ace_lines').removeClass('dropdown-selected');
+                    }
+                    e.preventDefault();
+                });
+                // set up invisibles
+                $('#ace_invis').click(function (e) {
+                    var invisibles = editor.renderer.getShowInvisibles();
+                    if (!invisibles) {
+                        $.cookie('yace.ace.show_invisible', 'true');
+                        $('#ace_invis').addClass('dropdown-selected');
+                    } else {
+                        $.cookie('yace.ace.show_invisible', 'false');
+                        $('#ace_invis').removeClass('dropdown-selected');
+                    }
+                    e.preventDefault();
+                });
+                // set up keyboard shortcuts for ACE
+                $('#ace_kbd_default').addClass('dropdown-selected');
+                $('#ace_kbd_vim').click(load_vim_kbd);
+                $('#ace_kbd_emacs').click(load_emacs_kbd);
+                $('#ace_kbd_default').click(load_default_kbd);
+
+                // set up the show dropdown submenu
+                $('#show_both').click(function (e) {
+                    show_both();
+                    e.preventDefault();
+                });
+                $('#show_editor').click(function (e) {
+                    show_editor();
+                    e.preventDefault();
+                });
+                $('#show_preview').click(function (e) {
+                    show_preview();
+                    e.preventDefault();
+                });
+
+            }
+            function show_editor() {
+                $('#preview').hide();
+                $('#editor')
+                $('#editor').css('width', '100%').resize().show();
+                $('#show_both').removeClass('dropdown-selected');
+                $('#show_editor').addClass('dropdown-selected');
+                $('#show_preview').removeClass('dropdown-selected');
+                $.cookie('yace.ui.show', 'editor');
+            }
+            function show_preview() {
+                $('#editor').hide()
+                $('#preview').css({'width': '100%', 'left': '0'})
+                                .resize()
+                                .show();
+                $('#show_both').removeClass('dropdown-selected');
+                $('#show_editor').removeClass('dropdown-selected');
+                $('#show_preview').addClass('dropdown-selected');
+                $.cookie('yace.ui.show', 'preview');
+            }
+            function show_both() {
+                $('#editor').css({'width': '50%'})
+                            .resize()
+                            .show();
+                $('#preview').css({'width': '50%', 'left': '50%'})
+                                .resize()
+                                .show();
+                $('#show_both').addClass('dropdown-selected');
+                $('#show_editor').removeClass('dropdown-selected');
+                $('#show_preview').removeClass('dropdown-selected');
+                $.cookie('yace.ui.show', 'both');
+            }
+
+            function load_preview_menu(params) {
+                // set up preview read only TODO
+                $('#prev_ro').click(function (e) {
+                    var ro = $('#preview').attr('contenteditable') === "false";
+                    $('#preview').attr('contenteditable', ro);
+                    if (!ro) {
+                        $('#prev_ro').addClass('dropdown-selected');
+                        $.cookie('yace.preview.ro', 'true');
+                    } else {
+                        $('#prev_ro').removeClass('dropdown-selected');
+                        $.cookie('yace.preview.ro', 'false');
+                    }
+                    e.preventDefault();
+                });
+
+                // set up preview theme submenu TODO
+            }
+
+            function load_modals(params) {
+                $('#rtfm_about').click(function (e) {
+                    // set up RTFM about box
+                    bs_rtfm("About YACE",
+                        '<p>YACE stands for "Yet Another Collaborative Editor". '
+                    + 'Based on `Share.js`,<br />'
+                    + 'it features all modern concepts of online edition:</p>'
+                    + ''
+                    + '<h2>Maintainer</h2>'
+                    + ''
+                    + '<p><a href="http://b.pratz.net">Bernard `Guyzmo` Pratz</a></p>'
+                    + ''
+                    + '<h2>Dependencies</h2>'
+                    + ''
+                    + '<ul>'
+                    + '    <li>node.js</li><li>share.js</li><li>connect</li>'
+                    + '    <li>browserchannel</li><li>redis</li><li>showdown</li>'
+                    + '    <li>twitter-bootstrap</li><li>rangy-browser</li>'
+                    + '    <li>googlediff</li><li>hallo.js</li><li>jquery</li>'
+                    + '</ul>'
+                    + ''
+                    + '<h2>License</h2>'
+                    + ''
+                    + '<a>Under the AGPLv3</a>');
+                    e.preventDefault();
+                });
+                $('#rtfm_help').click(function (e) {
+                    // set up RTFM about box
+                    bs_rtfm("Help", "<p>Help, I need somebody<br />"
+                                    + "Help, not just anybody<br />"
+                                    + "Help, you know I need someone, help<br />"
+                                    + "</p><p>"
+                                    + "When I was younger so much younger than today<br />"
+                                    + "I never needed anybody's help in any way<br />"
+                                    + "But now these days are gone, I'm not so self assured<br />"
+                                    + "Now I find I've changed my mind and opened up the doors<br />"
+                                    + "</p><p>"
+                                    + "Help me if you can, I'm feeling down<br />"
+                                    + "And I do appreciate you being round<br />"
+                                    + "Help me get my feet back on the ground<br />"
+                                    + "Won't you please, please help me<br />"
+                                    + "</p><p>"
+                                    + "And now my life has changed in oh so many ways<br />"
+                                    + "My independence seems to vanish in the haze<br />"
+                                    + "But every now and then I feel so insecure<br />"
+                                    + "I know that I just need you like I've never done before<br />"
+                                    + "</p><p>The Beatles</p>");
+
+                    e.preventDefault();
+                });
+            }
+
+            function init_yace() {
+                $('#overlay').hide();
+
+                // build the parameters
+                var defaults = {text: 'test', format:'markdown'};
+                if ($.cookie('yace.filetype') !== undefined)
+                    defaults.format = $.cookie('yace.filetype');
+                if ($.cookie('yace.ui.show') === "both")
+                    show_both();
+                else if ($.cookie('yace.ui.show') === "preview")
+                    show_preview();
+                else if ($.cookie('yace.ui.show') === "editor")
+                    show_editor();
+
+                var params = (function(params) {
+                    params = params.replace('?','').split('&').map(function (elt,idx,lst) { return elt.split('=')} );
+                    params.forEach(function(param) {
+                        defaults[param[0]] = param[1];
+                    });
+                    return defaults;
+                }(window.location.search));
+                return params;
+            }
+
+            function init_editor(params) {
+                // init the textarea element 
+                editor = ace.edit("editor");
+                editor.setReadOnly(true);
+                editor.setShowPrintMargin(false);
+                if ($.cookie('yace.ace.input_mode') === 'vim')
+                    load_vim_kbd();
+                else if ($.cookie('yace.ace.input_mode') === 'emacs')
+                    load_emacs_kbd();
+                else
+                    load_default_kbd();
+                    
+                if ($.cookie('yace.ace.show_invisible') === 'true') {
+                    editor.renderer.setShowInvisibles(true)
+                    $('#ace_invis').addClass('dropdown-selected');
+                }
+                if ($.cookie('yace.ace.gutter') === 'true'){ 
+                    editor.renderer.setShowGutter(true);
+                    $('#ace_lines').addClass('dropdown-selected');
+                }
+                if ($.cookie('yace.ace.wrap') === 'true') {
+                    editor.getSession().setUseWrapMode(true);
+                    $('#ace_wrap').addClass('dropdown-selected');
+                }
+                var theme;
+                if (params.theme !== undefined) {
+                    $.cookie('yace.ace.theme', params.theme);
+                    theme = params.theme;
+                } else if ($.cookie('yace.ace.theme') !== undefined)
+                    theme = $.cookie('yace.ace.theme');
+                if (theme)
+                    editor.setTheme("ace/theme/"+theme);
+                return editor;
+            }
+
             // load at startup
             window.onload = function() {
                 try {
-                    $('#overlay').hide();
+                    var params = init_yace();
 
-                    // build the parameters
-                    var defaults = {text: 'test', format:'markdown'}
-                    var params = (function(params) {
-                        params = params.replace('?','').split('&').map(function (elt,idx,lst) { return elt.split('=')} );
-                        var ret = defaults;
-                        params.forEach(function(param) {
-                            ret[param[0]] = param[1];
-                        });
-                        return ret;
-                    }(window.location.search));
-
-                    // load filetype menu
-                    var selected = "";
-                    if ('markdown' === params.format)
-                        selected = 'class="dropdown-selected"'
-                        //selected = '<span class="icon-ok-circle"></span>&nbsp;';
-                    $('#dd-filetype').append('<li role="presentation">'
-                                            + '<a id="markdown" '+selected+' href="#" tabindex="-1" role="menuitem">'
-                                            // + selected
-                                            + 'Markdown'
-                                            + '</a> </li>')
-                    $('#dd-filetype').append('<li class="divider" role="presentation"></li>')
-                    for (var lang in Object.keys(languages)) {
-                        lang = Object.keys(languages)[lang];
-                        var selected = "";
-                        if (lang === params.format)
-                            selected = 'class="dropdown-selected"'
-                        $('#dd-filetype').append('<li role="presentation">'
-                                                + '<a id="'+lang+'" '+selected+' href="#" tabindex="-1" role="menuitem">'
-                                                + lang 
-                                                + '</a> </li>');
-                    }
-                    $('ul#dd-filetype li a').click(function (e) {
-                        params['format'] = $(this).attr('id')
-                        var search = Object.keys(params).map(function(k) { return k+"="+params[k] }, params ).join("&")
-                        window.location.replace(window.location.origin + "/?" + search)
-                        e.preventDefault();
-                        return false;
-                    });
-
-                    // load theme menu
-                    for (var theme in themes) {
-                        theme = themes[theme];
-                        var selected = "";
-                        if (theme === params.theme) {
-                            selected = 'class="dropdown-selected"'
-                            editor.setTheme("ace/theme/"+params.theme);
-                        }
-                        $('#dd-theme').append('<li role="presentation">'
-                                                + '<a id="'+theme+'" '+selected+' href="#" tabindex="-1" role="menuitem">'
-                                                + theme 
-                                                + '</a> </li>');
-                    }
-                    $('ul#dd-theme li a').click(function (e) {
-                        editor.setTheme("ace/theme/"+$(this).attr('id'));
-                        $('#dd-theme li a').removeClass('dropdown-selected')
-                        $(this).addClass('dropdown-selected');
-                        e.preventDefault();
-                        return false;
-                    });
-
-                    // set up editor menu
-                    // set up wrap lines (TODO handle state pref with a cookie)
-                    $('#ace_wrap').click(function (e) {
-                        var wrap = editor.getSession().getUseWrapMode();
-                        editor.getSession().setUseWrapMode(!wrap);
-                        if (!wrap)
-                            $('#ace_wrap').addClass('dropdown-selected');
-                        else
-                            $('#ace_wrap').removeClass('dropdown-selected');
-                        e.preventDefault();
-                    });
-                    // set up toggle lines (TODO handle state pref with a cookie)
-                    $('#ace_lines').addClass('dropdown-selected');
-                    $('#ace_lines').click(function (e) {
-                        var gutter = editor.renderer.getShowGutter();
-                        editor.renderer.setShowGutter(!gutter);
-                        if (!gutter)
-                            $('#ace_lines').addClass('dropdown-selected');
-                        else
-                            $('#ace_lines').removeClass('dropdown-selected');
-                        e.preventDefault();
-                    });
-                    // set up invisibles
-                    $('#ace_invis').click(function (e) {
-                        var invisibles = editor.renderer.getShowInvisibles();
-                        editor.renderer.setShowInvisibles(!invisibles);
-                        if (!invisibles)
-                            $('#ace_invis').addClass('dropdown-selected');
-                        else
-                            $('#ace_invis').removeClass('dropdown-selected');
-                        e.preventDefault();
-                    });
-                    // set up keyboard shortcuts for ACE
-                    function load_vim_kbd() {
-                        ace.require("ace/lib/net").loadScript("/ace/keybinding-vim.js",
-                        function() {
-                            editor.setKeyboardHandler(ace.require("ace/keyboard/vim").handler); 
-                        });
-                        $('#ace_kbd_vim').addClass('dropdown-selected');
-                        $('#ace_kbd_emacs').removeClass('dropdown-selected');
-                        $('#ace_kbd_default').removeClass('dropdown-selected');
-                    }
-                    function load_emacs_kbd() {
-                        ace.require("ace/lib/net").loadScript("/ace/keybinding-emacs.js",
-                        function() {
-                            editor.setKeyboardHandler(ace.require("ace/keyboard/emacs").handler); 
-                        });
-                        $('#ace_kbd_vim').removeClass('dropdown-selected');
-                        $('#ace_kbd_emacs').addClass('dropdown-selected');
-                        $('#ace_kbd_default').removeClass('dropdown-selected');
-                    }
-                    function load_default_kbd() {
-                        editor.setKeyboardHandler();
-                        $('#ace_kbd_vim').removeClass('dropdown-selected');
-                        $('#ace_kbd_emacs').removeClass('dropdown-selected');
-                        $('#ace_kbd_default').addClass('dropdown-selected');
-                    }
-                    $('#ace_kbd_default').addClass('dropdown-selected');
-                    $('#ace_kbd_vim').click(load_vim_kbd);
-                    $('#ace_kbd_emacs').click(load_emacs_kbd);
-                    $('#ace_kbd_default').click(load_default_kbd);
-
-                    // set up the show dropdown submenu
-                    $('#show_both').click(function (e) {
-                            $('#editor').css({'width': '50%'})
-                                        .resize()
-                                        .show();
-                            $('#preview').css({'width': '50%', 'left': '50%'})
-                                         .resize()
-                                         .show();
-                            $('#show_both').addClass('dropdown-selected');
-                            $('#show_editor').removeClass('dropdown-selected');
-                            $('#show_preview').removeClass('dropdown-selected');
-                            e.preventDefault();
-                    });
-                    $('#show_editor').click(function (e) {
-                            $('#preview').hide();
-                            $('#editor')
-                            $('#editor').css('width', '100%').resize().show();
-                            $('#show_both').removeClass('dropdown-selected');
-                            $('#show_editor').addClass('dropdown-selected');
-                            $('#show_preview').removeClass('dropdown-selected');
-                            e.preventDefault();
-                    });
-                    $('#show_preview').click(function (e) {
-                            $('#editor').hide()
-                            $('#preview').css({'width': '100%', 'left': '0'})
-                                         .resize()
-                                         .show();
-                            $('#show_both').removeClass('dropdown-selected');
-                            $('#show_editor').removeClass('dropdown-selected');
-                            $('#show_preview').addClass('dropdown-selected');
-                            e.preventDefault();
-                    });
-
+                    // populate UI
+                    load_filetype_menu(params);
                     // set up export submenu TODO
+                    load_themes_menu(params);
+                    load_editor_menu(params);
+                    load_preview_menu(params);
+                    load_modals(params);
 
-                    // set up preview read only TODO
-                    $('#prev_ro').click(function (e) {
-                        var ro = $('#preview').attr('contenteditable') === "false";
-                        $('#preview').attr('contenteditable', ro);
-                        if (!ro)
-                            $('#prev_ro').addClass('dropdown-selected');
-                        else
-                            $('#prev_ro').removeClass('dropdown-selected');
-                        e.preventDefault();
-                    });
-
-                    // set up preview theme submenu TODO
-
-                    $('#rtfm_about').click(function (e) {
-                        // set up RTFM about box
-                        bs_rtfm("About YACE",
-                          '<p>YACE stands for "Yet Another Collaborative Editor". '
-                        + 'Based on `Share.js`,<br />'
-                        + 'it features all modern concepts of online edition:</p>'
-                        + ''
-                        + '<h2>Maintainer</h2>'
-                        + ''
-                        + '<p><a href="http://b.pratz.net">Bernard `Guyzmo` Pratz</a></p>'
-                        + ''
-                        + '<h2>Dependencies</h2>'
-                        + ''
-                        + '<ul>'
-                        + '    <li>node.js</li><li>share.js</li><li>connect</li>'
-                        + '    <li>browserchannel</li><li>redis</li><li>showdown</li>'
-                        + '    <li>twitter-bootstrap</li><li>rangy-browser</li>'
-                        + '    <li>googlediff</li><li>hallo.js</li><li>jquery</li>'
-                        + '</ul>'
-                        + ''
-                        + '<h2>License</h2>'
-                        + ''
-                        + '<a>Under the AGPLv3</a>');
-                        e.preventDefault();
-                    });
-                    $('#rtfm_help').click(function (e) {
-                        // set up RTFM about box
-                        bs_rtfm("Help", "<p>Help, I need somebody<br />"
-                                        + "Help, not just anybody<br />"
-                                        + "Help, you know I need someone, help<br />"
-                                        + "</p><p>"
-                                        + "When I was younger so much younger than today<br />"
-                                        + "I never needed anybody's help in any way<br />"
-                                        + "But now these days are gone, I'm not so self assured<br />"
-                                        + "Now I find I've changed my mind and opened up the doors<br />"
-                                        + "</p><p>"
-                                        + "Help me if you can, I'm feeling down<br />"
-                                        + "And I do appreciate you being round<br />"
-                                        + "Help me get my feet back on the ground<br />"
-                                        + "Won't you please, please help me<br />"
-                                        + "</p><p>"
-                                        + "And now my life has changed in oh so many ways<br />"
-                                        + "My independence seems to vanish in the haze<br />"
-                                        + "But every now and then I feel so insecure<br />"
-                                        + "I know that I just need you like I've never done before<br />"
-                                        + "</p><p>The Beatles</p>");
-
-                        e.preventDefault();
-                    });
-
-
-
-
-                    // get the textarea element 
-                    window.editor = ace.edit("editor");
-                    editor.getSession().setMode("ace/mode/"+params.format);
-                    editor.setReadOnly(true);
-                    editor.setShowPrintMargin(false);
+                    window.editor = init_editor(params);
 
                     // connect to the server
                     var connection = sharejs.open(params.text, 'text', function(error, doc) {
                         // this function is called once the connection is opened
                         if (error) {
                             console.error(error);
+                            bs_alert("Yace Init","Error initiating collaborative editor: "+error);
                         } else {
                             // attach the ShareJS document to the textarea
                             doc.attach_ace(editor);
                             editor.setReadOnly(false);
-                            window.doc = doc;
                             if (languages.hasOwnProperty(params.format)) {
                                 languages[params.format].language = params.format;
                                 try {
@@ -865,95 +1077,24 @@
                                 $('#run_script').on('click', function() {
                                     window.term.echo("[[gb;#0f0;#000]Executing script:]");
                                     window.term.exec(window.doc.snapshot);
-                                    $('#preview').focus();
                                 });
-                            } else if (params.format === "markdown") {
-                                $('#run_script').hide()
-                                // showdown setting
-                                var converter = new Showdown.converter();
-                                // hallo setting
-                                this.preview = $('#preview').hallo({
-                                    plugins: {
-                                        'halloformat': {},
-                                        'halloblock': {},
-                                        'hallojustify': {},
-                                        'hallolists': {},
-                                        //'hallolink': {},
-                                        'halloreundo': {}
-                                    },
-                                    editable: true,
-                                });
-                                var markdownize = function(content) {
-                                    var html = content.split("\n").map($.trim).filter(function(line) {
-                                        return line != "";
-                                    }).join("\n");
-                                    return toMarkdown(html);
-                                };
-                                var htmlize = function(content) {
-                                    return converter.makeHtml(content);
-                                };
-                                var showSource = function(content) {
-                                    var markdown = markdownize(content);
-                                    if (doc.getText() == markdown) {
-                                        return;
-                                    }
-                                    editor.getSession().getDocument().setValue(markdown);
-                                }; 
-                                var updateHtml = function(content) {
-                                    if (markdownize(jQuery('#preview').html()) == content) {
-                                        return;
-                                    }
-                                    var html = htmlize(content);
-                                    jQuery('#preview').html(html);
-                                };
-                                var skip_update = false;
-                                var hallomodified = function(event, data) {
-                                    var dmp = new diff_match_patch();
-                                    var edoc = editor.getSession().getDocument();
-                                    var diffs = dmp.diff_main(doc.snapshot, markdownize(data.content));
-                                    var pos = 0;
-                                    for (var i in diffs) {
-                                        var op = diffs[i][0];
-                                        var st = diffs[i][1];
-                                        if (op === 0) {
-                                            pos += st.length;
-                                        } else if (op === 1) {
-                                            pos += st.length;
-                                            skip_update = true;
-                                            if (st === "\n\n") {
-                                                edoc.insert(edoc.indexToPosition(pos-2), st);
-                                            } else
-                                                edoc.insert(edoc.indexToPosition(pos-1), st);
-                                            skip_update = false;
-                                        } else if (op === -1) {
-                                            var start = edoc.indexToPosition(pos);
-                                            var end = edoc.indexToPosition(pos+st.length);
-                                            var range = ace.require('ace/range').Range.fromPoints(start, end)
-                                            skip_update = true;
-                                            edoc.remove(range);
-                                            skip_update = false;
-                                        }
+                            } else if (text_formats.hasOwnProperty(params.format)) {
+                                try {
+                                    $.rloader([ {src:'markdown/showdown.js'},
+                                                {src:'googlediff.js'},
+                                                {src:'rangy-core.js'},
+                                                {src:'jquery-ui.min.js'},
+                                                {src:'to-markdown.js'},
+                                                {src:'hallo.js'},
+                                                {src:'hallo.css'},
+                                                {src:'/font-awesome/css/font-awesome.css'},
+                                                {event:'onready', func:text_formats[params.format].init} ]);
+                                } catch (e) { console.error(e); }
 
-                                    }
-                                    event.preventDefault()
-                                };
-                                $('#preview').bind('hallomodified', hallomodified);
-                                $('#editor').on('change', function(event, data) {
-                                    updateHtml(doc.snapshot);
-                                    event.preventDefault()
-                                });
-                                doc.on('change', function(op) {
-                                    console.warn(op);
-                                    if (!skip_update) {
-                                        updateHtml(doc.snapshot);
-                                    }
-                                });
-                                updateHtml(doc.snapshot);
-                                // /hallo update
-                                // update function
                             } else {
                                 bs_alert("unknown filetype "+params.format);
                             }
+                            window.doc = doc;
                         }
                     });
                 } catch (e) {
