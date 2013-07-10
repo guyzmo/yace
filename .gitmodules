@@ -7,3 +7,6 @@
 [submodule "node_modules/jsrepl"]
 	path = node_modules/jsrepl
 	url = https://github.com/replit/jsrepl.git
+[submodule "node_modules/jsPDF"]
+	path = node_modules/jsPDF
+	url = https://github.com/MrRio/jsPDF.git

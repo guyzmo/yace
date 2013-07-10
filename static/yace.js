@@ -616,6 +616,46 @@
     function load_export_menu(params) {
         // disable the whole menu
         $('#dd-export li a').addClass('disabled-link');
+        $('#pdf').removeClass('disabled-link')
+        $('#pdf').click(function () {
+            var doc = new jsPDF();
+
+            // We'll make our own renderer to skip this editor
+            var specialElementHandlers = {
+                '#preview': function(element, renderer){
+                    console.warn(element, renderer);
+                    return false;
+                },
+                '#editor': function(element, renderer){
+                    console.warn(element, renderer);
+                    return true;
+                },
+                '#overlay': function(element, renderer){
+                    console.warn(element, renderer);
+                    return true;
+                },
+                '#modal': function(element, renderer){
+                    console.warn(element, renderer);
+                    return true;
+                },
+                '#header': function(element, renderer){
+                    console.warn(element, renderer);
+                    return true;
+                },
+                '#footer': function(element, renderer){
+                    console.warn(element, renderer);
+                    return true;
+                },
+            };
+
+            // All units are in the set measurement for the document
+            // This can be changed to "pt" (points), "mm" (Default), "cm", "in"
+            doc.fromHTML($('body').get(0), 15, 15, {
+                'width': 170, 
+                'elementHandlers': specialElementHandlers
+            });
+			doc.save(params.text + '.pdf');
+        });
     }
 
     function load_vim_kbd() {
