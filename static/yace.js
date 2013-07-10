@@ -803,8 +803,10 @@
         for (var theme in preview_themes) {
             theme = preview_themes[theme];
             var selected = "";
-            if (theme === current)
+            if (theme === current) {
+                $("link[href^='hallo/hallo-theme']").attr('href', 'hallo/hallo-theme-'+theme+'.css')
                 selected = 'class="dropdown-selected"'
+            }
             $('#dd-prev-theme').append('<li role="presentation">'
                                         + '<a id="'+theme+'" '+selected+' href="#" tabindex="-1" role="menuitem">'
                                         + theme 
