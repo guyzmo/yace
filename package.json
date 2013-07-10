@@ -25,7 +25,7 @@
     "jshint": ">=2.1.4",
     "uglify-js": ">=1.2.6",
     "phantomjs": "0.2.x",
-    "mustache": "0.7.2" // dep, or dev-dep?
+    "mustache": "0.7.2"
   },
   "docco_husky": {
     "output_dir": "docs",
