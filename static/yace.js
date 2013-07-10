@@ -418,12 +418,14 @@
                                                 {src:'hallo.css'},
                                                 {src:'hallo-custom.css'},
                                                 {src:'/font-awesome/css/font-awesome.css'},
+                                                {src:'hallo/hallo-theme-raw.css'},
                                                 {event:'onready', func:init_markdown} ]}}
 
     function init_markdown() {
         rangy.init();
         $('#run_script').hide()
         $('#run_select').hide()
+        load_preview_menu();
         // showdown setting
         var converter = new Showdown.converter();
         // hallo setting
@@ -657,7 +659,7 @@
             }
             e.preventDefault();
         });
-        // set up toggle lines (TODO handle state pref with a cookie)
+        // set up toggle lines
         $('#ace_lines').addClass('dropdown-selected');
         $('#ace_lines').click(function (e) {
             var gutter = window.YACE.editor.renderer.getShowGutter();
@@ -736,8 +738,10 @@
         $.cookie('yace.ui.show', 'both');
     }
 
-    function load_preview_menu(params) {
-        // set up preview read only TODO
+    function load_preview_menu() {
+        $('#dd-prev-theme').removeClass('disabled-link');
+        $('#prev_ro').removeClass('disabled-link')
+        // set up preview read only
         $('#prev_ro').click(function (e) {
             var ro = $('#preview').attr('contenteditable') === "false";
             $('#preview').attr('contenteditable', ro);
@@ -751,9 +755,30 @@
             e.preventDefault();
         });
 
-        // set up preview theme submenu TODO
+        // set up preview theme submenu
+        var preview_themes = ['awesome', 'raw', 'white-on-black'];
+        var current = $.cookie('yace.preview.theme');
+        if (current === undefined)
+            current = "raw";
+        for (var theme in preview_themes) {
+            theme = preview_themes[theme];
+            var selected = "";
+            if (theme === current)
+                selected = 'class="dropdown-selected"'
+            $('#dd-prev-theme').append('<li role="presentation">'
+                                        + '<a id="'+theme+'" '+selected+' href="#" tabindex="-1" role="menuitem">'
+                                        + theme 
+                                        + '</a> </li>');
+        }
         // disable the whole submenu
-        $('#dd-prev-theme li a').addClass('disabled-link');
+        $('ul#dd-prev-theme li a').click(function (e) {
+            $("link[href^='hallo/hallo-theme']").attr('href', 'hallo/hallo-theme-'+$(this).attr('id')+'.css')
+            $('#dd-prev-theme li a').removeClass('dropdown-selected')
+            $(this).addClass('dropdown-selected');
+            $.cookie('yace.preview.theme', $(this).attr('id'));
+            e.preventDefault();
+            return false;
+        });
     }
     function load_modals(params) {
         $('#rtfm_about').click(function (e) {
@@ -787,7 +812,7 @@
             e.preventDefault();
         });
         $('#rtfm_help').click(function (e) {
-            // set up RTFM about box
+            // set up RTFM help box TODO
             bs_modals("Help", "<p>Help, I need somebody<br />"
                             + "Help, not just anybody<br />"
                             + "Help, you know I need someone, help<br />"
@@ -833,6 +858,10 @@
             });
             return defaults;
         }(window.location.search));
+
+        $('#dd-prev-theme').addClass('disabled-link');
+        $('#prev_ro').addClass('disabled-link')
+
         return params;
     }
     function init_editor(params) {
@@ -892,7 +921,6 @@
             load_export_menu(params);
             load_themes_menu(params);
             load_editor_menu(params);
-            load_preview_menu(params);
             load_modals(params);
 
             init_editor(params);
