@@ -1,0 +1,6 @@
+[submodule "https:/github.com/ajaxorg/ace-builds.git"]
+	path = https:/github.com/ajaxorg/ace-builds.git
+	url = ./node_modules/ace-builds
+[submodule "node_modules/ace-builds"]
+	path = node_modules/ace-builds
+	url = https://github.com/ajaxorg/ace-builds.git
