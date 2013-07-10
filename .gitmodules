@@ -4,3 +4,6 @@
 [submodule "node_modules/ace-builds"]
 	path = node_modules/ace-builds
 	url = https://github.com/ajaxorg/ace-builds.git
+[submodule "node_modules/jsrepl"]
+	path = node_modules/jsrepl
+	url = https://github.com/replit/jsrepl.git
