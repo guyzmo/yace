@@ -916,14 +916,14 @@
                         }
                         $('#filetype').val(params.format);
                         $('#run_script').on('click', function() {
+                            window.YACE.term.focus();
                             window.YACE.term.echo("[[gb;#0f0;#000]Executing script:]");
                             window.YACE.term.exec(window.YACE.doc.snapshot);
-                            window.YACE.term.focus();
                         });
                         $('#run_select').on('click', function() {
+                            window.YACE.term.focus();
                             window.YACE.term.echo("[[gb;#0f0;#000]Executing script:]");
                             window.YACE.term.exec(window.YACE.editor.getSelectedText());
-                            window.YACE.term.focus();
                         });
                     } else if (text_formats.hasOwnProperty(params.format)) {
                         try {
