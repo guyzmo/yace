@@ -1,0 +1,95 @@
+html, body {
+    height: 100%;
+}
+
+body {
+    overflow: hidden;
+}
+footer {
+    height:30px;
+}
+footer a:visited,
+footer a:active,
+footer a:hover {
+    color: #ffffff;
+}
+a.disabled-link,
+a.disabled-link:visited ,
+a.disabled-link:active,
+a.disabled-link:hover {
+    font-style: italic;
+    background-color:#d9d9d9 !important;
+    color:#aaa !important;
+}
+a.dropdown-selected,
+a.dropdown-selected:visited,
+a.dropdown-selected:active,
+a.dropdown-selected:hover {
+    font-style: italic;
+    background-color: #0081C2;
+    background-image: linear-gradient(to bottom, #0081CC, #0077B3);
+    background-repeat: repeat-x;
+    color: #ffffff;
+    text-decoration: none;
+}
+#preview {
+    top: 40px;
+    bottom: 30px;
+    left: 50%;
+    right: 0;
+    padding: 5px;
+    margin: 0;
+    position: fixed;
+    width: 50%;
+    height: 100%;
+    overflow: auto;
+    display: block;
+    line-height: 1.5em;
+}
+.icon-inline {
+    display: inline;
+}
+#editor {
+    left: 0;
+    margin: 0;
+    float: left;
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: 40px;
+    bottom: 30px;
+    height: 100%;
+    width: 50%;
+}
+#overlay {
+    z-index: 10000;
+    position: fixed;
+    top: 20%;
+    left: 30%;
+    padding: 10px;
+    border-radius: 10px;;
+    background: rgba(255,255,255,0.5);
+}
+#rtfm {
+    z-index: 9999;
+    border-radius: 10px;;
+    background: rgba(255,255,255,0.5);
+}
+.transparent {
+    opacity: 0.5;
+    width: 300px;
+}
+.full-height {
+    height: 100%;
+}
+.container-height {
+    margin: 0 auto;
+    height: 100%;
+}
+.container-fluid {
+    padding-left: 0px;
+    padding-right: 0px;
+}
+.navbar {
+    margin-bottom: 0px;
+}
