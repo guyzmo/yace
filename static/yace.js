@@ -607,7 +607,7 @@
         $('ul#dd-filetype li a').click(function (e) {
             params['format'] = $(this).attr('id')
             var search = Object.keys(params).map(function(k) { return k+"="+params[k] }, params ).join("&")
-            window.location.replace(window.location.origin + "/?" + search)
+            window.location.replace("/?" + search)
             $.cookie('yace.filetype', $(this).attr('id'));
             e.preventDefault();
             return false;
@@ -1004,17 +1004,26 @@
                           + '</div>';
                 $("header").html(frtpg);
                 $("section").remove();
+                var entered = false;
                 $("#text").click(function (e) {
                     $("#text").val("");
                     $("#text").off('click');
+                    entered = true;
+                    e.preventDefault();
+                });
+                $("#text").keyup(function (e) {
+                    if (e.keyCode == 13)
+                        $("#load").click();
+                    e.preventDefault();
                 });
                 $("#load").click(function (e) {
-                    if ($("#text").val() !== "") {
-                        window.location.replace(window.location.origin + "/?text=" +$("#text").val());
+                    if ($("#text").val() !== "" && entered) {
+                        window.location.replace("/?text=" +$("#text").val());
                     } else {
                         var uid = Math.random().toString(36).substring(7);
-                        window.location.replace(window.location.origin + "/?text=" +uid);
+                        window.location.replace("/?text=" +uid);
                     }
+                    e.preventDefault();
                 });
                 return;
             }
