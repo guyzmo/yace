@@ -28,8 +28,9 @@ DEPENDENCIES
 [1]:http://terminal.jcubic.pl/
 [2]:http://repl.it/
 [3]:http://ace.ajax.org/
-[4]:http://code.google.com/p/google-diff-match-patch/
-[5]:http://twitter.github.io/bootstrap
+[4]:https://github.com/coreyti/showdown
+[5]:http://code.google.com/p/google-diff-match-patch/
+[6]:http://twitter.github.io/bootstrap
 
 
 TODO
@@ -44,6 +45,6 @@ TODO
 LICENSE
 --
 
-GPLv3
-
+All original code is under [AGPLv3](http://www.gnu.org/licenses/agpl-3.0.html).
+Everything else is in their respective license.
 
