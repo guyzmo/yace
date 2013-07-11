@@ -1,4 +1,10 @@
 (function() {
+    // patch for webkit browsers that don't feature the String.endsWith method
+    if (String.prototype.endsWith === undefined) {
+        String.prototype.endsWith = function(suffix) {
+            return this.indexOf(suffix, this.length - suffix.length) !== -1;
+        };
+    }
     // rtfm
     var bs_modals = function(title, content) {
         $('#modal').html( '<div id="r" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">'
