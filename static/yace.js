@@ -656,6 +656,44 @@
             });
 			doc.save(params.text + '.pdf');
         });
+        $('#raw').removeClass('disabled-link')
+        $("#raw").click(function () {
+            var blob = new Blob(window.YACE.doc.snapshot.split("\n"), {
+                type: "text/plain;charset=utf-8;",
+            });
+            saveAs(blob, params.text+".md");
+        });
+        $('#html').removeClass('disabled-link')
+        $("#html").click(function () {
+            // showdown setting
+            var converter = new Showdown.converter();
+            var blob = new Blob(converter.makeHtml(window.YACE.doc.snapshot).split("\n"), {
+                type: "text/plain;charset=utf-8;",
+            });
+            saveAs(blob, params.text+".html");
+        });
+        // $('#gist').removeClass('disabled-link')
+        $("#gist").click(function () {
+            var gist = {
+                "description": "Gist from http://yace.m0g.net/?text="+params.text,
+                "public": true,
+                "files": {}
+            }
+            gist.files[params.text] = window.YACE.doc.snapshot;
+            $.ajax({
+                url: 'https://api.github.com/gists',
+                type: 'POST',
+                dataType: 'json',
+                data: JSON.stringify(gist)
+            })
+            .success( function(e) {
+                bs_info("Exported as Gist", "Document is now exported to "+e.html_url);
+            })
+            .error( function(e) {
+                console.error("gist save error", e);
+                bs_alert("Failure of Gist export", "Document couldn't be exported to gist.github.com:<br/>"+e.responseJSON.message);
+            });
+        });
     }
 
     function load_vim_kbd() {
