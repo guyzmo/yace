@@ -623,27 +623,24 @@
             // We'll make our own renderer to skip this editor
             var specialElementHandlers = {
                 '#preview': function(element, renderer){
-                    console.warn(element, renderer);
                     return false;
                 },
                 '#editor': function(element, renderer){
-                    console.warn(element, renderer);
                     return true;
                 },
                 '#overlay': function(element, renderer){
-                    console.warn(element, renderer);
                     return true;
                 },
                 '#modal': function(element, renderer){
-                    console.warn(element, renderer);
                     return true;
                 },
                 '#header': function(element, renderer){
-                    console.warn(element, renderer);
                     return true;
                 },
                 '#footer': function(element, renderer){
-                    console.warn(element, renderer);
+                    return true;
+                },
+                '.hallotoolbar': function(element, renderer){
                     return true;
                 },
             };
