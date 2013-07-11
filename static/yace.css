@@ -74,6 +74,7 @@ a.dropdown-selected:hover {
     padding: 10px;
     border-radius: 10px;;
     background: rgba(255,255,255,0.5);
+    visibility: hidden;
 }
 #rtfm {
     z-index: 9999;
