@@ -918,7 +918,7 @@
         $('#overlay').hide();
 
         // build the parameters
-        var defaults = {text: 'test', format:'markdown'};
+        var defaults = {format:'markdown'};
         if ($.cookie('yace.filetype') !== undefined)
             defaults.format = $.cookie('yace.filetype');
         if ($.cookie('yace.ui.show') === "both")
@@ -992,6 +992,32 @@
     window.YACE = function() {
         try {
             var params = init_yace();
+
+            if (!params.hasOwnProperty('text')) {
+                var frtpg = '<div class="masthead">'
+                          + '    <div class="jumbotron">'
+                          + '        <h1>YACE</h1>'
+                          + '        <p class="lead">Yet Another Collaborative Editor!</p>'
+                          + '        <input id="text" class="" type="text" value="Name of a document"></input><br/>'
+                          + '        <a id="load" class="btn btn-success" href="#">Create or load a document</a>';
+                          + '    </div>';
+                          + '</div>';
+                $("header").html(frtpg);
+                $("section").remove();
+                $("#text").click(function (e) {
+                    $("#text").val("");
+                    $("#text").off('click');
+                });
+                $("#load").click(function (e) {
+                    if ($("#text").val() !== "") {
+                        window.location.replace(window.location.origin + "/?text=" +$("#text").val());
+                    } else {
+                        var uid = Math.random().toString(36).substring(7);
+                        window.location.replace(window.location.origin + "/?text=" +uid);
+                    }
+                });
+                return;
+            }
 
             // populate UI
             load_filetype_menu(params);

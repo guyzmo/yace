@@ -77,7 +77,7 @@ a.dropdown-selected:hover {
 }
 #rtfm {
     z-index: 9999;
-    border-radius: 10px;;
+    border-radius: 10px;
     background: rgba(255,255,255,0.5);
 }
 .transparent {
@@ -98,3 +98,26 @@ a.dropdown-selected:hover {
 .navbar {
     margin-bottom: 0px;
 }
+
+/* Main marketing message and sign up button */
+.jumbotron {
+    color: #ffffff;
+    background: rgba(255,255,255,0.3);
+    max-width: 1000px;
+    margin: 100px 100px 100px 100px;
+    padding: 5px;
+    border-radius: 10px;
+    text-align: center;
+}
+.jumbotron hr {
+    margin: 60px 0;
+}
+.jumbotron h1 {
+    font-size: 100px;
+    line-height: 1;
+}
+.jumbotron .lead {
+    font-size: 24px;
+    line-height: 1.25;
+}
+
